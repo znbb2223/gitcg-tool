@@ -1,0 +1,354 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+body {
+  background: #16120d;
+  color: #e8e6e1;
+  font-family: system-ui, sans-serif;
+}
+.deckbuilder-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #16120d;
+  overflow: hidden;
+}
+.deckbuilder-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 6px 10px;
+  background: #241f17;
+  border-bottom: 1px solid #3d3527;
+  flex: none;
+}
+.deckbuilder-bar__main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.deckbuilder-bar__actions {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.deckbuilder-status {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #2e281f;
+  color: #cbd5e1;
+  white-space: nowrap;
+}
+.deckbuilder-status[data-ok] {
+  background: #14532d;
+  color: #bbf7d0;
+}
+.deckbuilder-bar button {
+  padding: 6px 10px;
+}
+.deckbuilder-bar b {
+  color: #f2e6c8;
+  font-size: 15px;
+}
+.deckbuilder-bar button {
+  padding: 7px 11px;
+  border-radius: 8px;
+  border: 1px solid #4a3f2d;
+  background: #2e281f;
+  color: #e8e6e1;
+  font-size: 12px;
+}
+.deckbuilder-bar .spacer {
+  flex: 1;
+}
+.deckbuilder-bar .bar-divider {
+  width: 1px;
+  align-self: stretch;
+  margin: 3px 2px;
+  background: #3a424b;
+}
+.deckbuilder-bar button.primary {
+  background: #3d3120;
+  border-color: #8a6d3b;
+  color: #f2e6c8;
+}
+.deckbuilder-bar button.danger {
+  border-color: #7a4a45;
+  color: #ffd2c4;
+  background: #2e2120;
+}
+.deckbuilder-bar button.toggle[data-off] {
+  border-color: #7a4a45;
+  color: #ffb4a2;
+  background: #2e2120;
+  font-weight: 600;
+}
+.deckbuilder-bar button.toggle {
+  font-weight: 600;
+  border-color: #3f6b4a;
+  color: #bbf7d0;
+  background: #16281c;
+}
+.deckbuilder-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+}
+.deckbuilder-body .deck-builder {
+  flex: 1;
+  min-height: 0;
+}
+
+.deckbuilder-errors {
+  flex: none;
+  max-height: 96px;
+  overflow-y: auto;
+  padding: 6px 12px;
+  background: #3a2323;
+  color: #ffd2c4;
+  font-size: 12px;
+  line-height: 1.6;
+  border-bottom: 1px solid #6b3a3a;
+}
+/* 提高组牌器文本对比度 */
+.deckbuilder-body .deck-builder {
+  color: #f2e6c8;
+}
+.deckbuilder-body .deck-builder button,
+.deckbuilder-body .deck-builder select,
+.deckbuilder-body .deck-builder option {
+  color: #f2e6c8;
+}
+.deckbuilder-body .deck-builder select {
+  background: #2e281f;
+}
+
+/* 顶部选项卡/版本选择：浅底黑字 */
+.deckbuilder-body .deck-builder button,
+.deckbuilder-body .deck-builder select,
+.deckbuilder-body .deck-builder option,
+.deckbuilder-body .deck-builder label {
+  color: #111 !important;
+}
+.deckbuilder-body .deck-builder select,
+.deckbuilder-body .deck-builder option {
+  background: #f2e6c8 !important;
+}
+/* 让卡牌详情弹层不被容器裁剪 */
+.deckbuilder-body {
+  overflow: visible;
+}
+
+/* 卡牌详情浮层：相对组牌器容器定位，避免被裁剪/错位 */
+.deckbuilder-body .deck-builder {
+  position: relative;
+  overflow: visible;
+  flex: 1;
+  min-height: 0;
+}
+
+/* 组牌器：toast 提示（自动消失，悬浮不占布局） */
+.deckbuilder-toast {
+  position: fixed;
+  top: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  pointer-events: none;
+  max-width: 86vw;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(227, 194, 126, 0.45);
+  background: rgba(26, 33, 41, 0.95);
+  color: #f0e4c6;
+  font-size: 12.5px;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.45);
+  animation: deckbuilder-toast 2.6s ease forwards;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@keyframes deckbuilder-toast {
+  0% { opacity: 0; transform: translate(-50%, -8px); }
+  8% { opacity: 1; transform: translate(-50%, 0); }
+  82% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -6px); }
+}
+.deckbuilder-bar button:disabled {
+  opacity: 0.35;
+  filter: grayscale(0.5);
+  pointer-events: none;
+}
+
+/* 窄屏（竖屏手机）：压缩顶栏与卡池头部，把空间让给可滑动选卡区 */
+@media (max-width: 560px) {
+  .deckbuilder-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 5px 8px 6px;
+  }
+  .deckbuilder-bar__main {
+    gap: 6px;
+  }
+  .deckbuilder-bar__actions {
+    margin-left: 0;
+    flex-wrap: wrap;
+    padding-bottom: 1px;
+  }
+  .deckbuilder-bar button {
+    padding: 4px 8px;
+    font-size: 11px;
+    border-radius: 6px;
+    flex: none;
+    white-space: nowrap;
+  }
+  .deckbuilder-status {
+    font-size: 10px;
+    padding: 2px 7px;
+  }
+  .deckbuilder-bar b {
+    font-size: 13.5px;
+  }
+  .deckbuilder-bar .bar-divider {
+    display: none;
+  }
+  /* 卡池头部压缩：标签页 / 搜索行更矮更紧 */
+  .gi-deck-pool {
+    padding: 5px 6px;
+  }
+  .gi-deck-pool .flex.flex-row {
+    margin-bottom: 4px !important;
+  }
+  .gi-deck-pool .h-8 {
+    height: 26px !important;
+    font-size: 11px;
+  }
+  .gi-deck-pool .w-22 {
+    width: 74px !important;
+  }
+  .gi-deck-pool input[type="search"],
+  .gi-deck-pool input[type="text"] {
+    height: 26px;
+    font-size: 11px;
+  }
+}
+
+/* 横屏矮屏（≤560px 高）：筛选栏也收进「筛选」按钮（与竖屏一致），省出选卡空间 */
+@media (max-height: 560px) and (min-width: 561px) {
+  /* 头部（标签/搜索行）同样压紧 */
+  .gi-deck-pool {
+    padding: 4px 6px;
+  }
+  .gi-deck-pool .flex.flex-row {
+    margin-bottom: 4px !important;
+  }
+  .gi-deck-pool .h-8 {
+    height: 26px !important;
+    font-size: 11px;
+  }
+  .gi-deck-pool .w-22 {
+    width: 74px !important;
+  }
+  .gi-deck-pool input[type="search"],
+  .gi-deck-pool input[type="text"] {
+    height: 26px;
+    font-size: 11px;
+  }
+  .gi-deck-pool .filter-bar {
+    height: 32px;
+    margin-bottom: 4px;
+  }
+  /* 露出筛选/清除按钮 */
+  .gi-deck-pool .filter-bar > label,
+  .gi-deck-pool .filter-bar > div[class*="bg-red-300"] {
+    display: flex !important;
+  }
+  /* 占位圆角边框 */
+  .gi-deck-pool .filter-bar > div[class*="b-purple-200"] {
+    display: block !important;
+  }
+  /* 筛选菜单改为按钮下方弹出层（未选中时收起）；
+     用兄弟选择器（不用 :has，兼容老 WebView），层级压过卡牌放大镜 */
+  .gi-deck-pool .filter-bar > div[class*="FM:grid-area"] {
+    position: absolute !important;
+    top: 40px !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 999 !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding: 10px 26px 10px 10px !important;
+    background: linear-gradient(170deg, #2b251b, #1c1711) !important;
+    border: 1px solid rgba(211, 188, 142, 0.45) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.4) !important;
+    display: none !important;
+    overflow-y: auto !important;
+    max-height: 170px !important;
+    width: auto !important;
+    scrollbar-width: none;
+  }
+  .gi-deck-pool .filter-bar .filter-menu-control:checked ~ div[class*="FM:grid-area"] {
+    display: flex !important;
+  }
+  .gi-deck-pool .filter-bar > div[class*="FM:grid-area"] > div[class*="flex-shrink-0"] {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+  }
+  /* 弹层里的标签更易点：加大热区 */
+  .gi-deck-pool .filter-bar > div[class*="FM:grid-area"] button {
+    width: 34px !important;
+    height: 34px !important;
+  }
+}
+
+/* 组牌器：牌组图弹窗 */
+.sharemodal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(4, 8, 14, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+}
+.sharemodal-inner {
+  max-width: min(92vw, 460px);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sharemodal-inner img {
+  width: 100%;
+  height: auto;
+  max-height: 76vh;
+  object-fit: contain;
+  border-radius: 10px;
+  border: 1px solid rgba(226, 198, 139, 0.5);
+  background: #f7f2e6;
+}
+.sharemodal-actions { display: flex; gap: 10px; }
+.sharemodal-actions button {
+  flex: 1;
+  min-height: 40px;
+  margin: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(226, 198, 139, 0.45);
+  background: rgba(226, 198, 139, 0.16);
+  color: #f4e7c8;
+  font: inherit;
+  font-size: 13.5px;
+}
+
+@import url("/responsive.css");

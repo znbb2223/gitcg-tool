@@ -1,0 +1,1086 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <link rel="stylesheet" href="/responsive.css" />
+    <title>七圣召唤工具</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --gold: #e6cb92;
+        --gold-soft: rgba(230, 203, 146, 0.42);
+        --gold-dim: rgba(230, 203, 146, 0.2);
+        --ink: #f4ecd9;
+        --cream: #f0e6cf;
+        --muted: #9aa8ba;
+        --indigo: #0d1524;
+      }
+      * { box-sizing: border-box; }
+      html, body { min-height: 100%; }
+      body {
+        margin: 0;
+        padding: 26px 18px 22px;
+        display: flex;
+        flex-direction: column;
+        color: var(--ink);
+        font-family: "Source Han Serif SC", "Noto Serif SC", Georgia, serif;
+        background:
+          radial-gradient(120% 70% at 50% -18%, rgba(78, 104, 150, 0.42), transparent 62%),
+          radial-gradient(90% 60% at 108% 8%, rgba(230, 203, 146, 0.12), transparent 60%),
+          radial-gradient(120% 80% at 50% 118%, rgba(38, 60, 92, 0.55), transparent 60%),
+          linear-gradient(180deg, #101a2b 0%, #0a111d 52%, #060a12 100%);
+        background-attachment: fixed;
+      }
+      /* 细密的星点，不抢内容 */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          radial-gradient(1px 1px at 12% 22%, rgba(255, 255, 255, 0.5), transparent 60%),
+          radial-gradient(1px 1px at 78% 12%, rgba(230, 203, 146, 0.5), transparent 60%),
+          radial-gradient(1px 1px at 34% 68%, rgba(255, 255, 255, 0.32), transparent 60%),
+          radial-gradient(1px 1px at 88% 62%, rgba(255, 255, 255, 0.3), transparent 60%),
+          radial-gradient(1px 1px at 56% 88%, rgba(230, 203, 146, 0.28), transparent 60%);
+        opacity: 0.7;
+        z-index: 0;
+      }
+      body > * { position: relative; z-index: 1; }
+
+      /* ===== 顶部 ===== */
+      .hero { text-align: center; padding: 10px 0 20px; }
+      .emblem {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 14px;
+        position: relative;
+        display: grid;
+        place-items: center;
+        transform: rotate(45deg);
+        border: 1px solid var(--gold-soft);
+        background: linear-gradient(135deg, rgba(230, 203, 146, 0.16), rgba(230, 203, 146, 0.02));
+        box-shadow: 0 0 26px rgba(230, 203, 146, 0.18), inset 0 0 18px rgba(230, 203, 146, 0.1);
+      }
+      .emblem::before {
+        content: "";
+        width: 30px;
+        height: 30px;
+        border: 1px solid var(--gold);
+        border-radius: 50%;
+        box-shadow: 0 0 16px rgba(230, 203, 146, 0.45);
+      }
+      .emblem::after {
+        content: "✦";
+        position: absolute;
+        font-size: 13px;
+        color: #fff4d8;
+        transform: rotate(-45deg);
+        text-shadow: 0 0 10px rgba(230, 203, 146, 0.9);
+      }
+      h1 {
+        margin: 0;
+        font-size: 27px;
+        font-weight: 600;
+        letter-spacing: 0.34em;
+        text-indent: 0.34em;
+        color: transparent;
+        background: linear-gradient(180deg, #fff7e4 8%, #edd7a4 52%, #c9a86a 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        filter: drop-shadow(0 0 16px rgba(230, 203, 146, 0.22));
+      }
+      .divider {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin: 12px 0 10px;
+        color: var(--gold);
+        opacity: 0.8;
+      }
+      .divider::before,
+      .divider::after {
+        content: "";
+        width: 72px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--gold-soft), var(--gold));
+      }
+      .divider::after { background: linear-gradient(270deg, transparent, var(--gold-soft), var(--gold)); }
+      .divider span { font-size: 9px; transform: rotate(45deg); }
+      .version { color: var(--muted); font-size: 11.5px; letter-spacing: 0.08em; }
+
+      /* ===== 入口卡片（角隅花饰 + 元素色描边） ===== */
+      .entries { display: flex; flex-direction: column; gap: 14px; margin-top: 24px; }
+      .entry { min-height: 92px; }
+      .entry {
+        --accent: #e6cb92;
+        position: relative;
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 16px 20px 15px 22px;
+        border: 1px solid rgba(230, 203, 146, 0.26);
+        border-radius: 10px;
+        background:
+          linear-gradient(100deg, rgba(230, 203, 146, 0.1), transparent 38%),
+          linear-gradient(165deg, rgba(35, 52, 74, 0.94), rgba(12, 19, 29, 0.96));
+        color: var(--ink);
+        font-family: inherit;
+        cursor: pointer;
+        overflow: hidden;
+        transition: border-color 180ms ease, transform 140ms ease, box-shadow 220ms ease;
+      }
+      /* 左侧元素色竖条 */
+      .entry::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 12%;
+        bottom: 12%;
+        width: 3px;
+        border-radius: 3px;
+        background: linear-gradient(180deg, transparent, var(--accent), transparent);
+        box-shadow: 0 0 14px var(--accent);
+        opacity: 0.85;
+      }
+      /* 角隅花饰：左上 / 右下 */
+      .entry .corner-tl,
+      .entry .corner-br {
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        border: 1px solid rgba(230, 203, 146, 0.55);
+        pointer-events: none;
+      }
+      .entry .corner-tl { left: 8px; top: 8px; border-right: 0; border-bottom: 0; }
+      .entry .corner-br { right: 8px; bottom: 8px; border-left: 0; border-top: 0; }
+      /* 元素骰子徽记：七圣召唤的骰子 + 米游社数字贴图 */
+      .entry > .entry-die {
+        position: absolute;
+        left: 18px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 46px;
+        height: 46px;
+        display: grid;
+        place-items: center;
+        z-index: 2;
+      }
+      .entry > .entry-die .hex {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.55));
+      }
+      .entry > .entry-die .num {
+        position: relative;
+        width: 22px;
+        height: 22px;
+        object-fit: contain;
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+      }
+      .entry { padding-left: 78px !important; }
+      .entry > * { position: relative; z-index: 1; }
+      .entry:hover {
+        border-color: rgba(230, 203, 146, 0.7);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 22px rgba(230, 203, 146, 0.12);
+      }
+      .entry:active { transform: scale(0.994); }
+      .entry-title {
+        font-size: 17.5px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        color: #f8efdb;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .entry-desc { font-size: 12px; color: #a9b6c7; margin-top: 7px; line-height: 1.7; }
+      .badge {
+        padding: 1px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(230, 203, 146, 0.42);
+        font-size: 10px;
+        font-weight: 400;
+        letter-spacing: 0.06em;
+        color: #f0dcaa;
+        background: rgba(230, 203, 146, 0.1);
+      }
+      /* 各入口的元素色 */
+      #openSimulator { --accent: #ff8a5c; }
+      #openDeckBuilder { --accent: #5cc8e8; }
+      #openStateEditor { --accent: #b98cff; }
+      #openLab { --accent: #7fd6a8; }
+      #openDeckLibrary { --accent: #e6cb92; }
+
+      /* ===== 页脚统计 ===== */
+      .stats {
+        margin-top: auto;
+        padding: 16px 14px 0;
+        font-size: 11.5px;
+        color: var(--muted);
+        line-height: 1.9;
+        border-top: 1px solid rgba(230, 203, 146, 0.14);
+      }
+      .stats > div:not(.tip) {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .stats > div:not(.tip)::before {
+        content: "◆";
+        font-size: 7px;
+        color: var(--gold-soft);
+      }
+      .stats b { color: #edd9ac; font-weight: 500; }
+      .tip { font-size: 11px; color: #77869a; margin-top: 8px; line-height: 1.6; }
+
+      /* ===== 右上角设置 ===== */
+      .gear {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 30;
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        border: 1px solid var(--gold-soft);
+        background: radial-gradient(circle at 50% 40%, rgba(230, 203, 146, 0.16), rgba(10, 16, 24, 0.9));
+        color: #f0dcaa;
+        font-size: 18px;
+        line-height: 1;
+        box-shadow: 0 0 16px rgba(0, 0, 0, 0.4);
+      }
+      .gear:active { transform: scale(0.94); }
+
+      /* ===== 设置面板 ===== */
+      .modal {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        background: rgba(4, 8, 14, 0.74);
+        backdrop-filter: blur(3px);
+      }
+      .modal.open { display: flex; }
+      .sheet {
+        width: 100%;
+        max-width: 420px;
+        max-height: 82vh;
+        overflow-y: auto;
+        border-radius: 12px;
+        border: 1px solid var(--gold-soft);
+        background:
+          linear-gradient(160deg, rgba(30, 44, 62, 0.98), rgba(9, 15, 23, 0.99));
+        padding: 16px 16px 18px;
+        box-shadow: inset 0 0 0 1px rgba(230, 203, 146, 0.12), 0 24px 60px rgba(0, 0, 0, 0.55);
+      }
+      .sheet-head {
+        display: flex;
+        align-items: center;
+        position: sticky;
+        top: -16px;
+        margin: -16px -16px 12px;
+        padding: 16px 16px 12px;
+        background: linear-gradient(160deg, rgba(32, 46, 64, 0.99), rgba(20, 30, 42, 0.98));
+        border-bottom: 1px solid rgba(230, 203, 146, 0.16);
+        z-index: 2;
+      }
+      .sheet-head b {
+        font-size: 16px;
+        letter-spacing: 0.16em;
+        color: #f4e2b8;
+      }
+      .sheet-head button {
+        margin-left: auto;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: 1px solid rgba(230, 203, 146, 0.3);
+        background: transparent;
+        color: #d8c9a6;
+        font-size: 15px;
+      }
+      .setting-title { font-size: 14px; color: #edd9ac; letter-spacing: 0.04em; }
+      .setting-note { margin: 5px 0 10px; font-size: 11.5px; color: var(--muted); line-height: 1.7; }
+      .setting-row { display: flex; align-items: flex-start; gap: 14px; }
+      .setting-text { flex: 1 1 auto; min-width: 0; }
+      .switch {
+        flex: 0 0 auto;
+        width: 52px;
+        height: 30px;
+        margin-top: 2px;
+        padding: 3px;
+        border: 1px solid rgba(230, 203, 146, 0.28);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.07);
+        transition: background 160ms ease, border-color 160ms ease;
+      }
+      .switch i {
+        display: block;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: #aebbcb;
+        transform: translateX(0);
+        transition: transform 160ms ease, background 160ms ease;
+      }
+      .switch.on {
+        background: rgba(230, 203, 146, 0.3);
+        border-color: var(--gold);
+      }
+      .switch.on i { transform: translateX(22px); background: #f6dda6; }
+      .opts { display: grid; gap: 8px; }
+      .opt {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(230, 203, 146, 0.2);
+        background: rgba(255, 255, 255, 0.04);
+        color: #dfe6ee;
+        font: inherit;
+        font-size: 13px;
+        text-align: left;
+      }
+      .opt span { margin-left: auto; font-size: 11px; color: var(--muted); }
+      .opt.on {
+        border-color: var(--gold);
+        background: rgba(230, 203, 146, 0.16);
+        color: #f8edd4;
+      }
+      .opt.on span { color: #d6c096; }
+      .backup-actions { display: flex; gap: 8px; margin-top: 10px; }
+      .bk-btn {
+        flex: 1;
+        height: 34px;
+        border-radius: 8px;
+        border: 1px solid rgba(230, 203, 146, 0.45);
+        background: linear-gradient(180deg, rgba(230, 203, 146, 0.18), rgba(230, 203, 146, 0.06));
+        color: #f0dcaa;
+        font: inherit;
+        font-size: 12.5px;
+      }
+      .bk-btn:active { transform: scale(0.98); }
+      .backup-note { margin-top: 8px; font-size: 11px; color: #8fa0b3; line-height: 1.6; }
+      .layout-modes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+    margin-top: 8px;
+  }
+  .layout-modes button {
+    padding: 8px 6px;
+    border-radius: 12px;
+    border: 1px solid rgba(240, 214, 160, 0.25);
+    background: rgba(255, 255, 255, 0.04);
+    color: #dfe6ee;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .layout-modes button span { font-size: 10px; color: #9fb0c2; }
+  .layout-modes button[data-active="true"] {
+    border-color: rgba(240, 214, 160, 0.8);
+    background: rgba(240, 214, 160, 0.16);
+    color: #f5e6c8;
+  }
+</style>
+  </head>
+  <body>
+    <script>
+      window.__STATIC_DATA_BASE__ = "/assets-local";
+      window.__UI_ASSET_BASE__ = "/assets-local/ui/";
+      window.__LOCAL_ASSETS__ = true;
+    </script>
+
+    <button class="gear" id="openSettings" aria-label="设置">⚙</button>
+
+    <div class="modal" id="settingsModal" aria-hidden="true">
+      <div class="sheet g-frame">
+        <div class="sheet-head">
+          <b>设置</b>
+          <button id="closeSettings" aria-label="关闭">✕</button>
+        </div>
+        <div class="setting">
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-title">AI 数据备份</div>
+              <div class="setting-note">
+                把对局日志（训练 + 对局经验）、决策记忆和对局日志打包成一个文件；<br />
+                换机或重装后导入即可继承，不用从头训练。<br />
+                导出位置：<b>下载/七圣召唤工具/AI数据备份/</b>
+              </div>
+            </div>
+          </div>
+          <div class="backup-actions">
+            <button class="bk-btn" id="exportAi">导出 AI 数据</button>
+            <button class="bk-btn" id="importAi">导入 AI 数据</button>
+            <input id="importAiFile" type="file" accept="application/json,.json" hidden />
+          </div>
+          <div class="backup-note" id="backupNote"></div>
+        </div>
+        <div class="setting">
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-title">牌组库备份</div>
+              <div class="setting-note">
+                导出你在组牌器／实验室里攒下的自建、AI 组牌与手动添加的牌组；<br />
+                换机或重装后导入，按牌组指纹合并，不会重复。<br />
+                导出位置：<b>下载/七圣召唤工具/牌组库备份/</b>
+              </div>
+            </div>
+          </div>
+          <div class="backup-actions">
+            <button class="bk-btn" id="exportDecks">导出牌组库</button>
+            <button class="bk-btn" id="importDecks">导入牌组库</button>
+            <input id="importDecksFile" type="file" accept="application/json,.json" hidden />
+          </div>
+          <div class="backup-note" id="decksNote"></div>
+        </div>
+        <div class="setting">
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-title">对局界面布局</div>
+              <div class="setting-note">
+                <b>20:9 等比</b>：画面固定 20:9 等比缩放，多出的边用木纹背景填充；<br />
+                <b>20:9 拉伸填充</b>：画面铺满整个屏幕，非 20:9 屏幕会整体拉伸变形；<br />
+                <b>锚点偏移</b>：角色、手牌、牌堆按十字中心锚定偏移，任何屏幕比例都不变形不裁切。<br />
+                选择会自动记住，切换后重新开始一局生效。
+              </div>
+            </div>
+            <div class="layout-modes" id="layoutModes">
+              <button type="button" data-mode="classic">20:9 等比<br /><span>等比缩放，留边填背景</span></button>
+              <button type="button" data-mode="stretch">20:9 拉伸填充<br /><span>铺满屏幕，画面会拉伸</span></button>
+              <button type="button" data-mode="anchor">锚点偏移<br /><span>十字中心锚定，不变形（推荐）</span></button>
+            </div>
+          </div>
+        </div>
+        <div class="setting">
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-title">主体方向</div>
+              <div class="setting-note">
+                工具页面（首页、牌组库、组牌器等）的横竖屏方向，选择即生效并记住；<br />
+                模拟器对局界面始终保持横屏，不受此项影响。
+              </div>
+            </div>
+            <div class="layout-modes" id="mainOrientation">
+              <button type="button" data-mode="portrait">竖屏<br /><span>默认，单手好操作</span></button>
+              <button type="button" data-mode="landscape">横屏<br /><span>和手机打横一致</span></button>
+            </div>
+          </div>
+        </div>
+        <div class="setting">
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-title">牌组图高画质渲染</div>
+              <div class="setting-note">
+                关闭：JPG，文件 1MB 以内，日常分享够用；<br />
+                开启：无损 PNG，8–11MB，放大看也不糊。<br />
+                全部都按这里生成，切换后立即生效（牌组库、组牌器、卡组实验室）。<br />
+                导出的牌组图存到：<b>下载/七圣召唤工具/牌组图/</b>
+              </div>
+            </div>
+            <button class="switch" id="losslessSwitch" type="button" role="switch" aria-checked="false">
+              <i></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <header class="hero">
+      <div class="emblem"></div>
+      <h1>七圣召唤工具</h1>
+      <div class="divider"><span>◆</span></div>
+      <div class="version">数据版本 7.2.0 · 构建 <b id="buildNo">0.11.156</b></div>
+    </header>
+
+    <div class="entries">
+      <button class="entry simulator" id="openSimulator" data-no="壹">
+        <span class="corner-tl"></span><span class="corner-br"></span><span class="entry-die"><img class="hex" src="/assets-local/ui/mys/fire.png" alt="" /><img class="num" src="/assets-local/ui/mys/num/1.png" alt="" /></span><div class="entry-title">七圣召唤模拟器</div>
+        <div class="entry-desc">
+          人机对战 / 机机观战，导入日志重演，摆盘器。进入后自动横屏。
+        </div>
+      </button>
+
+      <button class="entry deckbuilder" id="openDeckBuilder" data-no="贰">
+        <span class="corner-tl"></span><span class="corner-br"></span><span class="entry-die"><img class="hex" src="/assets-local/ui/mys/water.png" alt="" /><img class="num" src="/assets-local/ui/mys/num/2.png" alt="" /></span><div class="entry-title">组牌器</div>
+        <div class="entry-desc">
+          按角色/元素/费用筛选卡牌，随时生成或导入牌组码。
+        </div>
+      </button>
+
+      <button class="entry state-editor" id="openStateEditor" data-no="叁">
+        <span class="corner-tl"></span><span class="corner-br"></span><span class="entry-die"><img class="hex" src="/assets-local/ui/mys/elect.png" alt="" /><img class="num" src="/assets-local/ui/mys/num/3.png" alt="" /></span><div class="entry-title">摆盘器</div>
+        <div class="entry-desc">
+          编辑手牌、牌库、角色与支援区，摆好局面直接开局。
+        </div>
+      </button>
+
+      <button class="entry lab" id="openLab" data-no="肆">
+        <span class="corner-tl"></span><span class="corner-br"></span><span class="entry-die"><img class="hex" src="/assets-local/ui/mys/wind.png" alt="" /><img class="num" src="/assets-local/ui/mys/num/4.png" alt="" /></span><div class="entry-title">卡组实验室</div>
+        <div class="entry-desc">
+          超深搜索克制牌组、风格/元素筛选、生成牌组图、导出对局日志与回放。
+        </div>
+      </button>
+
+      <button class="entry deck-library" id="openDeckLibrary" data-no="伍">
+        <span class="corner-tl"></span><span class="corner-br"></span><span class="entry-die"><img class="hex" src="/assets-local/ui/mys/grass.png" alt="" /><img class="num" src="/assets-local/ui/mys/num/5.png" alt="" /></span><div class="entry-title">牌组库</div>
+        <div class="entry-desc">
+          按流派、标签、来源筛选牌组，看胜率与克制关系、五段打法说明，一键复制分享码。
+        </div>
+      </button>
+      <button class="entry about" id="openAbout" data-no="陆">
+        <span class="corner-tl"></span><span class="corner-br"></span><span class="entry-die"><img class="hex" src="/assets-local/ui/mys/frost.png" alt="" /><img class="num" src="/assets-local/ui/mys/num/6.png" alt="" /></span><div class="entry-title">关于</div>
+        <div class="entry-desc">
+          软件介绍、开源项目与源码地址、开发过程与踩过的坑。
+        </div>
+      </button>
+    </div>
+
+    <div class="stats">
+      <div>对局日志 · <b id="expGames">读取中…</b></div>
+      <div>缓存日志 · <b id="cacheCount">读取中…</b></div>
+      <div class="tip">对局日志（训练 + 对局经验）全应用共用；清应用缓存会一起清掉缓存日志与本地记忆，建议先在设置里导出备份。</div>
+    </div>
+
+    <script>
+      // 设置面板：目前只有「牌组图渲染画质」，存在 localStorage，两个页面各自读取
+      {
+        // 对局布局三种模式：contain（固定 20:9 不拉伸）/ cover（20:9 等比铺满裁切）/ fill（自适应拉伸）
+        const LAYOUT_KEY = "gitcg.gameLayout";
+        const layoutModes = document.getElementById("layoutModes");
+        const normalizeLayout = (v) =>
+          v === "stretch" || v === "anchor" ? v : "classic";
+        // 默认锚点偏移；选择过之后按上次的选择（localStorage 持久化）
+        const readLayout = () => {
+          const stored = localStorage.getItem(LAYOUT_KEY);
+          if (stored === null) {
+            return "anchor";
+          }
+          return normalizeLayout(stored);
+        };
+        const renderLayout = () => {
+          const mode = readLayout();
+          layoutModes?.querySelectorAll("button").forEach((btn) => {
+            btn.setAttribute("data-active", btn.dataset.mode === mode ? "true" : "false");
+          });
+        };
+        layoutModes?.addEventListener("click", (event) => {
+          const btn = event.target.closest("button[data-mode]");
+          if (!btn) return;
+          localStorage.setItem(LAYOUT_KEY, normalizeLayout(btn.dataset.mode));
+          renderLayout();
+        });
+        renderLayout();
+
+        const KEY = "gitcg.shareQuality";
+        const modal = document.getElementById("settingsModal");
+        const toggle = document.getElementById("losslessSwitch");
+        const mark = () => {
+          const on = localStorage.getItem(KEY) === "lossless";
+          toggle.classList.toggle("on", on);
+          toggle.setAttribute("aria-checked", on ? "true" : "false");
+        };
+        document.getElementById("openSettings").addEventListener("click", () => {
+          mark();
+          modal.classList.add("open");
+          modal.setAttribute("aria-hidden", "false");
+        });
+        document.getElementById("closeSettings").addEventListener("click", () => {
+          modal.classList.remove("open");
+          modal.setAttribute("aria-hidden", "true");
+        });
+        modal.addEventListener("click", (event) => {
+          if (event.target === modal) {
+            modal.classList.remove("open");
+            modal.setAttribute("aria-hidden", "true");
+          }
+        });
+        toggle.addEventListener("click", () => {
+          localStorage.setItem(KEY, localStorage.getItem(KEY) === "lossless" ? "compact" : "lossless");
+          mark();
+        });
+        mark();
+      }
+
+      document.getElementById("openAbout").addEventListener("click", () => {
+        location.href = "/about.html";
+      });
+
+      // 牌组库备份：导出自建/AI 组牌/手动添加的牌组，导入按指纹合并
+      {
+        const KEY = "gi-tcg-user-decks-v1";
+        const note = document.getElementById("decksNote");
+        const readDecks = () => {
+          try {
+            const list = JSON.parse(localStorage.getItem(KEY) ?? "[]");
+            return Array.isArray(list) ? list : [];
+          } catch {
+            return [];
+          }
+        };
+        const fingerprint = (deck) => {
+          const chars = [...(deck.chars ?? deck.characters ?? [])].sort((a, b) => a - b).join(",");
+          const cards = [...(deck.cards ?? [])].sort((a, b) => a - b).join(",");
+          return `${chars}|${cards}`;
+        };
+        document.getElementById("exportDecks").addEventListener("click", () => {
+          const decks = readDecks();
+          if (decks.length === 0) {
+            note.textContent = "还没有自建/AI 牌组可以导出";
+            return;
+          }
+          const text = JSON.stringify(
+            { kind: "gi-tcg-deck-library", version: 1, exportedAt: Date.now(), decks },
+            null,
+            2,
+          );
+          const name = `deck-library-${new Date().toISOString().slice(0, 10)}.json`;
+          if (window.AndroidHost?.saveTextFileIn) {
+            window.AndroidHost.saveTextFileIn("牌组库备份", name, text);
+            note.textContent = `已导出 ${decks.length} 套牌组 → 下载/七圣召唤工具/牌组库备份/${name}`;
+            return;
+          }
+          if (window.AndroidHost?.saveTextFile) {
+            window.AndroidHost.saveTextFile(name, text);
+            note.textContent = `已导出 ${decks.length} 套牌组 → 下载/${name}`;
+            return;
+          }
+          const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = name;
+          link.click();
+          URL.revokeObjectURL(url);
+          note.textContent = `已导出 ${decks.length} 套牌组`;
+        });
+        document.getElementById("importDecks").addEventListener("click", () => {
+          document.getElementById("importDecksFile").click();
+        });
+        document.getElementById("importDecksFile").addEventListener("change", async (event) => {
+          const file = event.target.files?.[0];
+          if (!file) {
+            return;
+          }
+          try {
+            const payload = JSON.parse(await file.text());
+            const incoming = Array.isArray(payload) ? payload : (payload.decks ?? []);
+            const current = readDecks();
+            const seen = new Set(current.map(fingerprint));
+            let added = 0;
+            for (const deck of incoming) {
+              const fp = fingerprint(deck);
+              if (!fp || seen.has(fp)) {
+                continue;
+              }
+              seen.add(fp);
+              current.unshift(deck);
+              added += 1;
+            }
+            localStorage.setItem(KEY, JSON.stringify(current.slice(0, 400)));
+            note.textContent = `导入完成：新增 ${added} 套，当前共 ${Math.min(current.length, 400)} 套`;
+          } catch {
+            note.textContent = "导入失败：文件不是牌组库备份";
+          } finally {
+            event.target.value = "";
+          }
+        });
+      }
+
+      const orientation = (mode) => window.AndroidHost?.setOrientation?.(mode);
+      // 主体方向：默认竖屏；选择即生效并持久化（模拟器始终横屏）
+      {
+        const ORIENT_KEY = "gitcg.mainOrientation";
+        const orientEl = document.getElementById("mainOrientation");
+        const readOrientation = () =>
+          localStorage.getItem(ORIENT_KEY) === "landscape" ? "landscape" : "portrait";
+        const renderOrientation = () => {
+          const mode = readOrientation();
+          orientEl?.querySelectorAll("button").forEach((btn) => {
+            btn.setAttribute("data-active", btn.dataset.mode === mode ? "true" : "false");
+          });
+        };
+        orientEl?.addEventListener("click", (event) => {
+          const btn = event.target.closest("button[data-mode]");
+          if (!btn) return;
+          localStorage.setItem(ORIENT_KEY, btn.dataset.mode);
+          renderOrientation();
+          orientation(btn.dataset.mode);
+        });
+        renderOrientation();
+        orientation(readOrientation());
+      }
+
+      const EXP_KEY = "gi-tcg-ai-learning-v1";
+      try {
+        const raw = localStorage.getItem(EXP_KEY);
+        if (raw) {
+          const learning = JSON.parse(raw);
+          document.getElementById("expGames").textContent =
+            `${learning.games ?? 0} 局 · 版本 ${learning.gameVersion ?? "7.2.0"}`;
+        } else {
+          document.getElementById("expGames").textContent = "内置 69,515 局社区战绩种子（开局即有基础判断）";
+        }
+      } catch {
+        document.getElementById("expGames").textContent = "读取失败";
+      }
+
+      // ===== AI 数据导出 / 导入（对局日志 + 决策记忆 + 对局日志） =====
+      {
+        const MEM_KEY = "gi-tcg-ai-memory-v1";
+        const LOG_KEY = "gi-tcg-ai-game-log-v1";
+        const note = document.getElementById("backupNote");
+        const readJson = (key, fallback) => {
+          try {
+            return JSON.parse(localStorage.getItem(key) ?? "null") ?? fallback;
+          } catch {
+            return fallback;
+          }
+        };
+        const save = (name, text) => {
+          if (window.AndroidHost?.saveTextFileIn) {
+            window.AndroidHost.saveTextFileIn("AI数据备份", name, text);
+            return true;
+          }
+          if (window.AndroidHost?.saveTextFile) {
+            window.AndroidHost.saveTextFile(name, text);
+            return true;
+          }
+          try {
+            const blob = new Blob([text], { type: "application/json" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = name;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+            return true;
+          } catch {
+            return false;
+          }
+        };
+
+        document.getElementById("exportAi")?.addEventListener("click", () => {
+          const bundle = {
+            kind: "gi-tcg-ai-experience-bundle",
+            version: 2,
+            exportedAt: new Date().toISOString(),
+            learning: readJson(EXP_KEY, null),
+            memory: readJson(MEM_KEY, null),
+            games: readJson(LOG_KEY, []),
+            // 三处 AI 设置各自独立保存，一起打包
+            aiSettings: {
+              sim: readJson("gi-tcg-ai-settings-v2:sim", null),
+              lab: readJson("gi-tcg-ai-settings-v2:lab", null),
+              train: readJson("gi-tcg-ai-settings-v2:train", null),
+            },
+          };
+          const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
+          const ok = save(`gitcg-ai-backup-${stamp}.json`, JSON.stringify(bundle, null, 1));
+          const games = bundle.learning?.games ?? 0;
+          const settingCount = Object.values(bundle.aiSettings).filter(Boolean).length;
+          note.textContent = ok
+            ? games > 0
+              ? `已导出：${games} 局记忆 + ${(bundle.games ?? []).length} 条对局日志 + ${settingCount} 份 AI 设置`
+              : "已导出（当前还没有本地记忆，首局之后会累积；内置 69,515 局种子随应用走，不用备份）"
+            : "导出失败，请检查存储权限";
+        });
+
+        const fileInput = document.getElementById("importAiFile");
+        document.getElementById("importAi")?.addEventListener("click", () => fileInput?.click());
+        fileInput?.addEventListener("change", async () => {
+          const file = fileInput.files?.[0];
+          if (!file) {
+            return;
+          }
+          try {
+            const parsed = JSON.parse(await file.text());
+            if (parsed?.kind !== "gi-tcg-ai-experience-bundle") {
+              throw new Error("not bundle");
+            }
+            // 学习数据：局数多的那份为主，牌组表取并集、局数取大
+            const current = readJson(EXP_KEY, null);
+            const incoming = parsed.learning ?? null;
+            if (incoming) {
+              const base = (current?.games ?? 0) >= (incoming.games ?? 0) ? current : incoming;
+              const other = base === current ? incoming : current;
+              const merged = { ...base };
+              merged.decks = { ...(other?.decks ?? {}), ...(base?.decks ?? {}) };
+              for (const [key, deck] of Object.entries(other?.decks ?? {})) {
+                const mine = merged.decks[key];
+                if (mine && (deck.games ?? 0) > (mine.games ?? 0)) {
+                  merged.decks[key] = deck;
+                }
+              }
+              for (const bucket of ["cards", "characters"]) {
+                const out = { ...(other?.[bucket] ?? {}) };
+                for (const [id, entry] of Object.entries(base?.[bucket] ?? {})) {
+                  const prev = out[id];
+                  out[id] = prev
+                    ? {
+                        games: Math.max(prev.games ?? 0, entry.games ?? 0),
+                        wins: Math.max(prev.wins ?? 0, entry.wins ?? 0),
+                        draws: Math.max(prev.draws ?? 0, entry.draws ?? 0),
+                      }
+                    : entry;
+                }
+                merged[bucket] = out;
+              }
+              merged.games = Math.max(current?.games ?? 0, incoming.games ?? 0);
+              merged.updatedAt = Date.now();
+              localStorage.setItem(EXP_KEY, JSON.stringify(merged));
+            }
+            // AI 参数：按作用域分别恢复（模拟器 / 实验室 / 训练互不影响）
+            if (parsed.aiSettings && typeof parsed.aiSettings === "object") {
+              for (const scope of ["sim", "lab", "train"]) {
+                const value = parsed.aiSettings[scope];
+                if (value && typeof value === "object") {
+                  localStorage.setItem(`gi-tcg-ai-settings-v2:${scope}`, JSON.stringify(value));
+                }
+              }
+            }
+            // 决策记忆：访问次数取大
+            if (parsed.memory?.entries) {
+              const target = readJson(MEM_KEY, { kind: "gi-tcg-ai-memory", version: 1, entries: {} });
+              for (const [key, entry] of Object.entries(parsed.memory.entries)) {
+                const mine = target.entries[key];
+                if (!mine || (entry.visits ?? 0) > (mine.visits ?? 0)) {
+                  target.entries[key] = entry;
+                }
+              }
+              localStorage.setItem(MEM_KEY, JSON.stringify(target));
+            }
+            // 对局日志：追加去重
+            if (Array.isArray(parsed.games)) {
+              const mine = readJson(LOG_KEY, []);
+              const seen = new Set(mine.map((row) => JSON.stringify(row)));
+              for (const row of parsed.games) {
+                const key = JSON.stringify(row);
+                if (!seen.has(key)) {
+                  seen.add(key);
+                  mine.push(row);
+                }
+              }
+              localStorage.setItem(LOG_KEY, JSON.stringify(mine.slice(-2000)));
+            }
+            note.textContent = `导入完成：${parsed.learning?.games ?? 0} 局记忆已合并`;
+            setTimeout(() => location.reload(), 900);
+          } catch {
+            note.textContent = "导入失败：不是有效的 AI 备份文件";
+          }
+        });
+      }
+
+      const cacheCount = document.getElementById("cacheCount");
+      try {
+        if (window.AndroidHost?.listCacheFiles) {
+          const rows = window.AndroidHost.listCacheFiles().split("\n").filter(Boolean);
+          cacheCount.textContent = `${rows.length} 份`;
+        } else {
+          const cache = JSON.parse(localStorage.getItem("gi-tcg-lab-cache-logs-v1") ?? "{}");
+          cacheCount.textContent = `${Object.keys(cache).length} 份`;
+        }
+      } catch {
+        cacheCount.textContent = "读取失败";
+      }
+
+      document.getElementById("openStateEditor")?.addEventListener("click", () => {
+        location.href = "/state-editor.html";
+      });
+      document.getElementById("openSimulator").addEventListener("click", () => {
+        orientation("landscape");
+        location.href = "/app.html";
+      });
+      // 工具页（组牌器/实验室/牌组库）跟随「主体方向」设置：
+      // 先按设置转好方向再跳转，页面加载期间就不会先竖屏闪一下
+      const applyMainOrientation = () =>
+        orientation(
+          localStorage.getItem("gitcg.mainOrientation") === "landscape"
+            ? "landscape"
+            : "portrait",
+        );
+      document.getElementById("openDeckBuilder").addEventListener("click", () => {
+        applyMainOrientation();
+        location.href = "/deck-builder.html";
+      });
+      document.getElementById("openLab").addEventListener("click", () => {
+        applyMainOrientation();
+        location.href = "/lab.html";
+      });
+      document.getElementById("openDeckLibrary").addEventListener("click", () => {
+        applyMainOrientation();
+        location.href = "/deck-library.html";
+      });
+
+      // 系统返回键：在工具首页时退出应用
+      window.__dshBack = () => "exit";
+    </script>
+  </body>
+</html>
+<!-- hub-theme: 七圣召唤棋盘底纹 + 牌背装饰 -->
+<style>
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(80% 55% at 50% 0%, rgba(10, 16, 26, 0.2), rgba(6, 10, 16, 0.86)),
+      url("/assets-local/ui/ChessboardBackground.webp") center / cover no-repeat;
+    opacity: 0.12;
+    mix-blend-mode: screen;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 96px;
+    height: 96px;
+    transform: translateX(-50%) rotate(-8deg);
+    background: url("/assets-local/ui/CardbackNormal.svg.webp") center / contain no-repeat;
+    opacity: 0.22;
+    filter: saturate(0.85) blur(0.2px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .hero { position: relative; }
+</style>
+<style>
+  /* ===== 首页：固定一屏，不滚动，按屏幕比例自适应 ===== */
+  html, body { height: 100%; }
+  body {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(4px, 1.2vh, 14px);
+    padding: clamp(10px, 2.2vh, 26px) clamp(12px, 4vw, 26px);
+    overflow: hidden;
+  }
+  .hero { flex: none; padding: clamp(2px, 1vh, 10px) 0 clamp(2px, 1vh, 8px); }
+  .hero h1 { font-size: clamp(20px, 4.4vh, 34px); }
+  .hero .version { font-size: clamp(10px, 1.6vh, 12.5px); }
+  .entries {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(5px, 1.2vh, 12px);
+    align-content: start;
+    grid-auto-rows: auto;
+    overflow: hidden;
+  }
+  .entries .entry {
+    padding: clamp(7px, 1.5vh, 15px) clamp(10px, 3.4vw, 18px);
+    min-height: calc(64px + 2vh);
+  }
+  .entries .entry-title { font-size: clamp(13px, 2.2vh, 16px); }
+  .entries .entry-desc {
+    font-size: clamp(10px, 1.55vh, 12px);
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: normal;
+  }
+  /* 手机质感：去掉浏览器点击高亮、选中、长按菜单 */
+  * { -webkit-tap-highlight-color: transparent; }
+  html, body { overscroll-behavior: none; }
+  body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  button { -webkit-appearance: none; appearance: none; }
+  button:focus, a:focus { outline: none; -webkit-tap-highlight-color: transparent; }
+  ::selection { background: transparent; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+  .entries .entry-die { width: clamp(30px, 6.4vh, 46px); height: clamp(30px, 6.4vh, 46px); }
+  .stats { flex: none; font-size: clamp(10px, 1.6vh, 12px); }
+  .stats .tip { display: none; }
+
+  /* 矮屏：收掉描述与次要信息，保证一屏放得下 */
+  @media (max-width: 392px) {
+    .hero .emblem { display: none; }
+    .hero h1 { font-size: clamp(20px, 4vh, 26px); letter-spacing: 0.16em; }
+    .hero .version { font-size: 10px; line-height: 1.4; }
+    .stats { display: none; }
+  }
+  @media (max-height: 700px) {
+    .entries .entry-desc { font-size: 9.8px; -webkit-line-clamp: 2; }
+    .entries .entry-title { font-size: 13px; }
+    .hero .divider { display: none; }
+    .stats { display: none; }
+  }
+  /* 更矮或横屏：两列摆放 */
+  /* 小窗 / 自由窗口 / 小分辨率：允许滚动，保证所有入口都能看到 */
+  @media (max-height: 620px), (max-width: 360px) {
+    body { overflow-y: auto !important; }
+    .entries { flex: 0 0 auto; }
+    .entries .entry { min-height: 64px; }
+    .stats { display: flex; }
+  }
+  @media (max-height: 520px), (min-aspect-ratio: 1/1) {
+    .entries { grid-template-columns: 1fr 1fr; }
+    .hero h1 { font-size: clamp(17px, 4vh, 24px); }
+    .hero .version { font-size: 10px; }
+    .entries .entry-desc { display: none; }
+  }
+  /* 平板/大屏：两列 + 放大 */
+  @media (min-width: 760px) and (min-height: 700px) {
+    .entries { grid-template-columns: 1fr 1fr; }
+    body { max-width: 1100px; margin: 0 auto; }
+  }
+</style>
+<script>
+  // 首页按返回键直接退出 App
+  window.__dshBack = () => "exit";
+</script>
+<style>
+  /* 小窗 / 窄屏：入口单列、标题不折成三行 */
+  @media (max-width: 520px) {
+    .entries { grid-template-columns: 1fr !important; }
+    .entries .entry { min-height: 58px; }
+    .entries .entry-title { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hero h1 { font-size: 22px; }
+    .hero .version { font-size: 10px; }
+  }
+</style>
+<style>
+  /* ===== 主流手机比例适配（按高度/宽度，不按宽高比，避免竖屏全部命中） ===== */
+
+  /* 16:9 左右的短屏手机（约 733px 高）：两列、收紧 */
+  @media (max-height: 780px) and (max-width: 560px) {
+    .entries { grid-template-columns: 1fr 1fr; }
+    .entries .entry-desc { display: none; }
+    .entries .entry { min-height: 56px; }
+    .hero .divider { display: none; }
+    .stats { display: none; }
+  }
+
+  /* 21:9 以上的细长屏（≥930px 高）：保住六项 */
+  @media (min-height: 930px) {
+    .entries .entry { padding: 9px 14px; }
+    .hero h1 { font-size: 26px; }
+  }
+
+  /* 平板 / 折叠内屏：两列 + 放大 */
+  @media (min-width: 700px) and (orientation: portrait) {
+    body { max-width: 900px; margin: 0 auto; }
+    .entries { grid-template-columns: 1fr 1fr; }
+    .entries .entry { min-height: 96px; }
+    .entries .entry-title { font-size: 17px; }
+    .entries .entry-desc { display: block; font-size: 12px; }
+  }
+</style>
+    <link rel="stylesheet" href="/genshin-ui.css" />
+

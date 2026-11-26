@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>摆盘器 · 七圣召唤工具</title>
+        <link rel="stylesheet" href="/genshin-ui.css" />
+  <script>
+      window.__STATIC_DATA_BASE__ = "/assets-local";
+      window.__UI_ASSET_BASE__ = "/assets-local/ui/";
+      window.__LOCAL_ASSETS__ = true;
+    </script>
+  </head>
+  <body>
+        <script>
+      // 跟随「主体方向」设置（模拟器对局除外），进页立即应用
+      setTimeout(() => {
+        if (localStorage.getItem("gitcg.mainOrientation") === "landscape") {
+          window.AndroidHost?.setOrientation?.("landscape");
+        }
+      }, 300);
+    </script>
+<div id="root"></div>
+    <script type="module" src="/src/state-editor.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,58 @@
+/* 全页面比例适配：16:9 / 18:9 / 18.5:9 / 19.5:9 / 20:9 / 21:9 / 23:9 / 4:3 / 16:10 / 6:5 */
+
+/* 矮屏（16:9 及更矮，平板也落在这里）：收紧留白 */
+@media (max-height: 780px) and (max-width: 560px) {
+  body {
+    padding-top: 8px;
+    padding-bottom: 16px;
+  }
+  h1 {
+    font-size: 18px;
+    letter-spacing: 0.16em;
+  }
+  .card {
+    padding: 10px 12px;
+    margin-top: 8px;
+  }
+  .stat {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  button, .btn {
+    min-height: 34px;
+  }
+}
+
+/* 18:9 ~ 19.5:9：接近主流，略微留白 */
+@media (min-height: 800px) {
+  body {
+    padding-bottom: 24px;
+  }
+}
+
+/* 21:9 及以上（含折叠外屏 23:9）：细长屏，压缩头部并允许滚动 */
+@media (min-height: 930px) {
+  h1 {
+    font-size: 17px;
+  }
+  body {
+    padding-bottom: 30px;
+  }
+}
+
+/* 平板 / 折叠内屏（4:3、16:10、6:5）：限宽居中、网格多列 */
+@media (min-width: 700px) and (orientation: portrait) {
+  body {
+    max-width: 920px;
+    margin: 0 auto;
+  }
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 520px) and (orientation: portrait) {
+  .row {
+    grid-template-columns: 1fr 1fr;
+  }
+}

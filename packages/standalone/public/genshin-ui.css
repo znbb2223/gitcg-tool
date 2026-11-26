@@ -1,0 +1,191 @@
+/* ============================================================
+   原神 UI 风格共享样式（除模拟器游戏界面以外的所有页面共用）
+   配色：深黑棕底 + 金色描边/标题 + 米白正文 + 金色角饰
+   ============================================================ */
+
+:root {
+  --g-bg: #17140f;
+  --g-bg-soft: #1e1a14;
+  --g-panel: #241f17;
+  --g-panel-2: #2d261c;
+  --g-gold: #d3bc8e;
+  --g-gold-bright: #ecd7a4;
+  --g-gold-deep: #a98d5f;
+  --g-line: rgba(211, 188, 142, 0.26);
+  --g-text: #ece5d8;
+  --g-muted: #a89a80;
+  --g-blue: #a9c0d0;
+  --g-red: #e0917c;
+
+  /* 兼容各页面已有的变量名 */
+  --gold: #d3bc8e;
+  --gold-soft: rgba(211, 188, 142, 0.4);
+  --gold-dim: rgba(211, 188, 142, 0.18);
+  --ink: #ece5d8;
+  --cream: #f0e6cf;
+  --muted: #a89a80;
+  --indigo: #131009;
+}
+
+html,
+body {
+  background: var(--g-bg);
+  color: var(--g-text);
+}
+
+/* 深色纹理底：黑棕渐变 + 金色微光 + 斜纹 */
+body {
+  background-color: #14100b;
+  background-image:
+    radial-gradient(120% 70% at 50% -18%, rgba(122, 100, 60, 0.35), transparent 62%),
+    radial-gradient(90% 60% at 108% 8%, rgba(211, 188, 142, 0.12), transparent 60%),
+    radial-gradient(120% 80% at 50% 118%, rgba(96, 74, 42, 0.4), transparent 60%),
+    linear-gradient(180deg, #1c1711 0%, #15100b 52%, #0e0a07 100%),
+    url("/assets-local/genshin/texture.svg");
+  background-attachment: fixed;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+  background-size: auto, auto, auto, auto, 56px 56px;
+}
+
+/* 首页入口卡：蓝底 → 黑棕底 */
+.entry {
+  background:
+    linear-gradient(100deg, rgba(211, 188, 142, 0.12), transparent 38%),
+    linear-gradient(165deg, rgba(48, 39, 27, 0.95), rgba(20, 16, 11, 0.97));
+}
+.entry:hover {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 22px rgba(211, 188, 142, 0.16);
+}
+
+/* 设置弹窗 */
+.modal {
+  background: rgba(10, 8, 5, 0.78);
+}
+.sheet {
+  background: linear-gradient(160deg, rgba(42, 35, 24, 0.98), rgba(19, 15, 11, 0.99));
+}
+.sheet-head {
+  background: linear-gradient(160deg, rgba(46, 38, 27, 0.99), rgba(27, 22, 15, 0.98));
+}
+
+/* 金色角饰框：四角包边 + 内衬渐变 */
+.g-frame {
+  position: relative;
+  border: 1px solid var(--g-line);
+  background-color: var(--g-panel);
+  background-image:
+    url("/assets-local/genshin/corner.svg"),
+    url("/assets-local/genshin/corner-tr.svg"),
+    url("/assets-local/genshin/corner-br.svg"),
+    url("/assets-local/genshin/corner-bl.svg"),
+    linear-gradient(168deg, rgba(46, 38, 26, 0.94), rgba(19, 15, 11, 0.97));
+  background-position: left top, right top, right bottom, left bottom, center;
+  background-repeat: no-repeat;
+  background-size: 13px 13px, 13px 13px, 13px 13px, 13px 13px, auto;
+}
+
+/* 金色标题 + 菱形分隔线 */
+.g-divider {
+  height: 10px;
+  background: url("/assets-local/genshin/divider.svg") center / 220px 10px no-repeat;
+  opacity: 0.9;
+}
+
+/* 通用金色按钮质感（各页面可加 g-btn 类） */
+.g-btn,
+button.g-btn {
+  border: 1px solid var(--g-gold-deep);
+  background:
+    linear-gradient(180deg, rgba(61, 52, 35, 0.9), rgba(28, 23, 16, 0.95)),
+    url("/assets-local/genshin/btn-gold.svg") center / 100% 100% no-repeat;
+  color: var(--g-text);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.65);
+  box-shadow: inset 0 1px 0 rgba(236, 215, 164, 0.18), 0 2px 8px rgba(0, 0, 0, 0.35);
+  border-radius: 6px;
+}
+button.g-btn:active {
+  filter: brightness(1.12);
+}
+button.g-btn:disabled {
+  opacity: 0.4;
+  filter: grayscale(0.5);
+}
+
+/* 金色细滚动条 */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(#8a744d, #5d4e33);
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.045);
+}
+
+/* 列表小菱形 */
+.g-dot::before {
+  content: "◆";
+  color: var(--g-gold);
+  font-size: 0.75em;
+  margin-right: 0.45em;
+  opacity: 0.85;
+}
+
+/* ============ 各页面按钮的金色质感（覆盖式） ============ */
+
+/* 首页设置：导出/导入 + 布局模式选项 */
+.bk-btn,
+.layout-modes button:not([data-active]) {
+  border: 1px solid var(--g-gold-deep);
+  background: linear-gradient(180deg, rgba(61, 52, 35, 0.88), rgba(28, 23, 16, 0.94));
+  color: var(--g-text);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 1px 0 rgba(236, 215, 164, 0.16);
+  border-radius: 6px;
+}
+
+/* 组牌器顶栏（vite 打包 css 在其后，需 !important） */
+.deckbuilder-bar button:not(.toggle):not(.danger):not(.primary) {
+  border: 1px solid var(--g-gold-deep) !important;
+  background: linear-gradient(180deg, rgba(61, 52, 35, 0.88), rgba(28, 23, 16, 0.94)) !important;
+  color: var(--g-text) !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 1px 0 rgba(236, 215, 164, 0.16) !important;
+}
+.deckbuilder-bar button.primary {
+  background: linear-gradient(180deg, rgba(122, 96, 52, 0.9), rgba(66, 50, 26, 0.95)) !important;
+  border-color: #c8a660 !important;
+  color: #f6ecd2 !important;
+}
+.deckbuilder-bar button.danger {
+  background: linear-gradient(180deg, rgba(84, 46, 40, 0.9), rgba(46, 26, 22, 0.95)) !important;
+  border-color: #a05c4e !important;
+  color: #f0c9bd !important;
+}
+
+/* 牌组库：主操作按钮 */
+.trainBtn,
+.modalclose,
+.backup-actions button {
+  border: 1px solid var(--g-gold-deep);
+  background: linear-gradient(180deg, rgba(61, 52, 35, 0.88), rgba(28, 23, 16, 0.94));
+  color: var(--g-text);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
+}
+
+/* 实验室：普通按钮与输入 */
+#log,
+textarea,
+select,
+input {
+  background: #241f17;
+  border-color: #3d3527;
+  color: var(--g-text);
+}
+.card {
+  background: #201b13;
+  border-color: #2b251b;
+}

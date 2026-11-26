@@ -1,0 +1,68 @@
+// Copyright (C) 2024-2025 Guyutongxue
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import { Router } from "./router";
+import {
+  createContext,
+  createSignal,
+  onSettled,
+  useContext,
+  type Accessor,
+} from "solid-js";
+import { useAuth } from "./auth";
+import { GITHUB_AUTH_REDIRECT_URL } from "./config";
+
+const MobileContext = createContext<Accessor<boolean>>();
+export const useMobile = () => useContext(MobileContext)!;
+
+function App() {
+  const mobileMediaQuery = window.matchMedia("(max-width: 768px)");
+  const [mobile, setMobile] = createSignal(mobileMediaQuery.matches);
+  const handleMobileChange = (e: MediaQueryListEvent) => {
+    setMobile(e.matches);
+  };
+
+  const { refresh } = useAuth();
+  const onReceiveToken = async (e: MessageEvent) => {
+    if (
+      e.origin !== new URL(GITHUB_AUTH_REDIRECT_URL).origin ||
+      e.source !== window.githubOAuthPopup
+    ) {
+      return;
+    }
+    if (e.data && e.data.type === "login" && e.data.token) {
+      localStorage.setItem("accessToken", e.data.token);
+      window.githubOAuthPopup?.close();
+      await refresh();
+    }
+  };
+
+  onSettled(() => {
+    mobileMediaQuery.addEventListener("change", handleMobileChange);
+    window.addEventListener("message", onReceiveToken);
+    return () => {
+      mobileMediaQuery.removeEventListener("change", handleMobileChange);
+      window.removeEventListener("message", onReceiveToken);
+    };
+  });
+
+  return (
+    <MobileContext value={mobile}>
+      <Router />
+    </MobileContext>
+  );
+}
+
+export default App;

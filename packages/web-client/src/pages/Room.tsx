@@ -1,0 +1,675 @@
+// Copyright (C) 2024-2025 Guyutongxue
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import { paths } from "../router";
+import { useNavigate, useParams, useSearchParams } from "@solidjs/router";
+import { Layout } from "../layouts/Layout";
+import {
+  PlayerInfo,
+  roomCodeToId,
+  getPlayerAvatarUrl,
+  getErrorMessage,
+} from "../utils";
+import {
+  Show,
+  Loading,
+  Errored,
+  createSignal,
+  onSettled,
+  createMemo,
+  createEffect,
+  getOwner,
+  runWithOwner,
+  Switch,
+  Match,
+  Component,
+  createUniqueId,
+} from "solid-js";
+import axios, { AxiosError } from "axios";
+import "@gi-tcg/web-ui-core/style.css";
+import EventSourceStream from "@server-sent-stream/web";
+import {
+  base64Decode,
+  base64Encode,
+  Notification,
+  RpcRequest,
+  RpcResponse,
+} from "@gi-tcg/typings";
+import {
+  type ClientChessboardProps,
+  createClient,
+  WebUiPlayerIO,
+} from "@gi-tcg/web-ui-core";
+import { useMobile } from "../App";
+import { dynamic } from "@solidjs/web";
+import { MobileChessboardLayout } from "../layouts/MobileChessboardLayout";
+import type { CancellablePlayerIO } from "@gi-tcg/core";
+import { useAuth } from "../auth";
+import { useI18n } from "../i18n";
+
+import { fetchProfile, type ProfileSummary } from "../profiles";
+
+interface InitializedPayload {
+  profile: ProfileSummary;
+  who: 0 | 1;
+  config: {
+    watchable: boolean;
+  };
+  myPlayerInfo: PlayerInfo;
+  oppPlayerInfo: PlayerInfo;
+}
+
+interface RpcTimer {
+  current: number;
+  total: number;
+}
+
+interface ActionRequestPayload {
+  id: number;
+  timer: RpcTimer;
+  request: string;
+}
+
+const SSE_RECONNECT_TIMEOUT = 30 * 1000;
+
+const createReconnectSse = <T,>(
+  url: string | (() => string),
+  onPayload: (payload: T) => void | Promise<void>,
+  onError?: (e: Error) => void,
+): [fetch: () => void, abort: () => void] => {
+  let reconnectTimeout: number | null = null;
+  let abortController: AbortController | null = null;
+  let cancelled = false;
+  let activating = false;
+
+  const resetReconnectTimer = () => {
+    if (reconnectTimeout) {
+      clearTimeout(reconnectTimeout);
+    }
+    reconnectTimeout = setTimeout(() => {
+      console.warn?.("No data received, reconnecting...");
+      abortController?.abort();
+    }, SSE_RECONNECT_TIMEOUT);
+  };
+
+  const connect = () => {
+    if (cancelled) {
+      return;
+    }
+    if (activating) {
+      return;
+    }
+    activating = true;
+    abortController = new AbortController();
+    axios
+      .get(typeof url === "function" ? url() : url, {
+        headers: {
+          Accept: "text/event-stream",
+        },
+        responseType: "stream",
+        signal: abortController.signal,
+        adapter: "fetch",
+        validateStatus: () => true, // Accept all status codes
+      })
+      .then(async (response) => {
+        if (response.status !== 200) {
+          onError?.(
+            new AxiosError(
+              response.statusText,
+              `${response.status}`,
+              void 0,
+              void 0,
+              response,
+            ),
+          );
+          return;
+        }
+        console.log(`${url} CONNECTED`);
+        const data: ReadableStream = response.data;
+        const reader = data.pipeThrough(new EventSourceStream()).getReader();
+
+        activating = false;
+        resetReconnectTimer(); // Start the timer after connection is established
+
+        for (;;) {
+          const { value, done } = await reader.read();
+          if (done) {
+            break;
+          }
+          resetReconnectTimer(); // Reset the timer on receiving data
+          const payload = JSON.parse(value.data);
+          try {
+            await onPayload(payload);
+          } catch (e) {
+            abortController?.abort();
+            throw e;
+          }
+        }
+
+        if (reconnectTimeout) {
+          clearTimeout(reconnectTimeout);
+        }
+      })
+      .catch((error) => {
+        // network error / abort error, try reconnect later
+        activating = false;
+        if (cancelled) {
+          return;
+        }
+        onError?.(error);
+        setTimeout(connect, 1000);
+      });
+  };
+
+  return [
+    () => {
+      cancelled = false;
+      activating = false;
+      connect();
+    },
+    () => {
+      cancelled = true;
+      activating = false;
+      abortController?.abort();
+    },
+  ];
+};
+
+export default function Room() {
+  const params = useParams<{ code: string }>();
+  const [searchParams] = useSearchParams<{ player: string; action: string }>();
+  const session = createMemo(() => ({
+    code: params.code,
+    playerId: searchParams.player,
+    action: !!searchParams.action,
+  }));
+  return (
+    <Show keyed when={session()}>
+      {(session) => <RoomSession {...session} />}
+    </Show>
+  );
+}
+
+function RoomSession(props: {
+  code: string;
+  playerId?: string;
+  action: boolean;
+}) {
+  const owner = getOwner();
+  const { t, assetsManager, locale } = useI18n();
+  const checkboxId = createUniqueId();
+  const navigate = useNavigate();
+  const id = () => roomCodeToId(props.code);
+  const { status } = useAuth();
+  const [playerIo, setPlayerIo] = createSignal<WebUiPlayerIO>();
+  const [initialized, setInitialized] = createSignal<InitializedPayload>();
+  const [loading, setLoading] = createSignal(true);
+  const [failed, setFailed] = createSignal<null | string>(null);
+  const [chessboard, setChessboard] =
+    createSignal<Component<ClientChessboardProps>>();
+
+  // Enable opp chessboard & spectator mode
+  const [observerMode, setObserverMode] = createSignal(false);
+  const [oppPlayerIo, setOppPlayerIo] = createSignal<CancellablePlayerIO>();
+
+  const reportStreamError = async (e: Error) => {
+    if (!initialized()) {
+      setLoading(false);
+      setFailed(getErrorMessage(e));
+    }
+    if (e instanceof AxiosError) {
+      const response = e.response;
+      if (response?.data instanceof ReadableStream) {
+        try {
+          response.data = await new Response(response.data).json();
+        } catch {}
+        const message = getErrorMessage(e);
+        if (initialized()) {
+          alert(message);
+        } else {
+          setLoading(false);
+          setFailed(message);
+        }
+        console.error(response.data);
+      }
+    }
+    console.error(e);
+  };
+
+  const initializeClient = async (payload: InitializedPayload) => {
+    const profile = await fetchProfile(payload.profile);
+    const onGiveUp = async () => {
+      try {
+        const { data } = await axios.post(
+          `rooms/${id()}/players/${props.playerId}/giveUp`,
+        );
+      } catch (e) {
+        if (e instanceof AxiosError) {
+          alert(getErrorMessage(e));
+        }
+        console.error(e);
+      }
+    };
+    if (!playerIo()) {
+      const [io, Ui] = runWithOwner(owner, () =>
+        createClient(payload.who, {
+          assetsManager: () => assetsManager(profile),
+          locale,
+          onGiveUp,
+          disableAction: !props.action,
+        }),
+      );
+      setChessboard(() => Ui);
+      setPlayerIo(io);
+    }
+  };
+
+  const onActionRequested = async (payload: ActionRequestPayload) => {
+    const io = playerIo();
+    if (!io || payload.id === lastRpcId) {
+      return;
+    }
+    lastRpcId = payload.id;
+    setCurrentMyTimer(payload.timer);
+    const request = RpcRequest.decode(base64Decode(payload.request));
+    const response = await io.rpc(request).catch(() => void 0);
+    if (!response || lastRpcId !== payload.id) {
+      return;
+    }
+    setCurrentMyTimer(null);
+    try {
+      const reply = axios.post(
+        `rooms/${id()}/players/${props.playerId}/actionResponse`,
+        {
+          id: payload.id,
+          response: base64Encode(RpcResponse.encode(response).finish()),
+        },
+      );
+      await reply;
+    } catch (e) {
+      if (e instanceof AxiosError) {
+        alert(getErrorMessage(e));
+      }
+      console.error(e);
+    }
+  };
+
+  const deleteRoom = async () => {
+    if (!window.confirm(t("deleteRoomConfirm"))) {
+      return;
+    }
+    try {
+      const { data } = await axios.delete(`rooms/${id()}`);
+      history.back();
+    } catch (e) {
+      if (e instanceof AxiosError) {
+        alert(getErrorMessage(e));
+      }
+      console.error(e);
+    }
+  };
+
+  const [currentMyTimer, setCurrentMyTimer] = createSignal<RpcTimer | null>(
+    null,
+  );
+  const [currentOppTimer, setCurrentOppTimer] = createSignal<RpcTimer | null>(
+    null,
+  );
+  let lastRpcId: number | null = null;
+  let countDownTimerIntervalId: number | null = null;
+  const countDownTimer = () => {
+    const myTimer = currentMyTimer();
+    if (myTimer) {
+      const current = myTimer.current - 1;
+      setCurrentMyTimer({ ...myTimer, current });
+      if (current <= 0) {
+        playerIo()?.cancelRpc();
+        setCurrentMyTimer(null);
+      }
+    }
+    const oppTimer = currentOppTimer();
+    if (oppTimer) {
+      const current = oppTimer.current - 1;
+      setCurrentOppTimer({ ...oppTimer, current });
+      if (current <= 0) {
+        oppPlayerIo()?.cancelRpc?.();
+        setCurrentOppTimer(null);
+      }
+    }
+  };
+  const setActionTimer = () => {
+    countDownTimerIntervalId = window.setInterval(countDownTimer, 1000);
+  };
+  const cleanActionTimer = () => {
+    if (countDownTimerIntervalId) {
+      window.clearInterval(countDownTimerIntervalId);
+    }
+  };
+
+  const roomInfo = createMemo(() =>
+    axios.get<{ status: string }>(`rooms/${id()}`).then(({ data }) => data),
+  );
+  const loadingNotice = () => (
+    <div class="mb-3 alert alert-outline-info">{t("roomLoading")}</div>
+  );
+
+  const [fetchMyNotification, abortMyNotification] = createReconnectSse(
+    () => `rooms/${id()}/players/${props.playerId}/notification`,
+    async (payload: any) => {
+      setLoading(false);
+      switch (payload.type) {
+        case "initialized": {
+          await initializeClient(payload);
+          setFailed(null);
+          setInitialized(payload);
+          if (payload?.config?.watchable && allowWatchOpp()) {
+            setObserverMode(true);
+          }
+          break;
+        }
+        case "notification": {
+          const notification = Notification.decode(base64Decode(payload.data));
+          playerIo()?.notify(notification);
+          break;
+        }
+        case "oppRpc": {
+          setCurrentOppTimer(payload.oppTimer ?? null);
+          break;
+        }
+        case "rpc": {
+          const rpc: ActionRequestPayload | null = payload.data;
+          if (rpc) {
+            onActionRequested(rpc);
+          } else {
+            // 观战方收到 RPC 状态变化时取消 RPC（玩家已完成 RPC 无需取消）
+            if (!props.action) {
+              playerIo()?.cancelRpc();
+            }
+            setCurrentMyTimer(null);
+          }
+          break;
+        }
+        case "error": {
+          alert(t("fatalError", { message: payload.message }));
+          break;
+        }
+        default: {
+          console.log("%c%s", "color: green", JSON.stringify(payload));
+          break;
+        }
+      }
+    },
+    reportStreamError,
+  );
+
+  const getOppPlayerId = () => initialized()?.oppPlayerInfo.id;
+  const allowWatchOpp = () => !props.action;
+
+  const [fetchOppNotification, abortOppNotification] = createReconnectSse(
+    () => `rooms/${id()}/players/${getOppPlayerId()}/notification`,
+    (payload: any) => {
+      switch (payload.type) {
+        case "initialized": {
+          const myPlayerIo = playerIo();
+          if (myPlayerIo) {
+            const oppPlayerIo = myPlayerIo.oppController.open();
+            setOppPlayerIo(oppPlayerIo);
+          }
+          break;
+        }
+        case "notification": {
+          const notification = Notification.decode(base64Decode(payload.data));
+          oppPlayerIo()?.notify(notification);
+          break;
+        }
+        case "rpc": {
+          const rpc: ActionRequestPayload | null = payload.data;
+          if (rpc) {
+            const request = RpcRequest.decode(base64Decode(rpc.request));
+            oppPlayerIo()
+              ?.rpc(request)
+              .catch(() => void 0);
+          } else {
+            oppPlayerIo()?.cancelRpc?.();
+            setCurrentOppTimer(null);
+          }
+          break;
+        }
+        case "error": {
+          break;
+        }
+        default: {
+          console.log("%c%s", "color: orange", JSON.stringify(payload));
+          break;
+        }
+      }
+    },
+    reportStreamError,
+  );
+
+  createEffect(observerMode, (observing) => {
+    if (observing) {
+      fetchOppNotification();
+    } else {
+      abortOppNotification();
+      playerIo()?.oppController.close();
+      setOppPlayerIo();
+    }
+  });
+
+  const downloadGameLog = async () => {
+    try {
+      const { data } = await axios.get(`rooms/${id()}/gameLog`);
+      const blob = new Blob([JSON.stringify(data)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `gameLog.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      a.remove();
+    } catch (e) {
+      if (e instanceof AxiosError) {
+        alert(getErrorMessage(e));
+      }
+      console.error(e);
+    }
+  };
+
+  const getClientPlayerInfo = (playerInfo: PlayerInfo) => ({
+    name: playerInfo.name,
+    avatarUrl: getPlayerAvatarUrl(playerInfo),
+  });
+
+  let chessboardContainer: HTMLDivElement | undefined;
+
+  const mobile = useMobile();
+
+  onSettled(() => {
+    fetchMyNotification();
+    setActionTimer();
+    return () => {
+      abortMyNotification();
+      abortOppNotification();
+      cleanActionTimer();
+    };
+  });
+
+  const RoomLayout = dynamic(() =>
+    mobile() && !!chessboard() ? MobileChessboardLayout : Layout,
+  );
+  const Chessboard = dynamic(chessboard);
+  return (
+    <RoomLayout>
+      <div
+        class="p-0 data-[mobile]:h-100dvh data-[mobile]:overflow-clip container mx-auto flex flex-col group max-w-[calc((100dvh-13.5rem)*160/81)]"
+        data-mobile={!!(mobile() && chessboard())}
+      >
+        <div class="group-data-[mobile]:fixed top-0 right-0 z-100 group-data-[mobile]:translate-x-100% group-data-[mobile]:rotate-90 transform-origin-top-left flex group-data-[mobile]:flex-col flex-row group-data-[mobile]:items-start items-center has-[:where(.visibility-control:checked)]:bg-white group-data-[mobile]:pl-[calc(var(--root-padding-top)+1rem)] group-data-[mobile]:p-4 rounded-br-2xl">
+          <input
+            hidden
+            type="checkbox"
+            class="peer visibility-control"
+            id={checkboxId}
+          />
+          <label
+            for={checkboxId}
+            class="hidden ml-4 mb-3 group-data-[mobile]:inline-flex btn btn-soft-primary peer-checked:btn-solid-primary text-primary peer-checked:text-white text-1.2rem h-8 w-8 p-0 items-center justify-center opacity-50 peer-checked:opacity-100"
+          >
+            <i class="i-mdi-info" />
+          </label>
+          <div class="flex-grow group-data-[mobile]:hidden group-data-[mobile]:peer-checked:flex flex flex-row group-data-[mobile]:flex-col flex-wrap items-center justify-between mb-3">
+            <div class="flex flex-row flex-wrap gap-3 items-center">
+              <h2 class="text-2xl font-bold flex-shrink-0">
+                {t("roomNumber", { code: props.code })}
+              </h2>
+              <Show when={!loading() && !failed() && !initialized()}>
+                <button class="btn btn-outline-red" onClick={deleteRoom}>
+                  <i class="i-mdi-delete" />
+                </button>
+              </Show>
+              <Show when={initialized()?.config.watchable}>
+                <Show when={allowWatchOpp()}>
+                  <button
+                    class="btn btn-outline-primary"
+                    onClick={() => setObserverMode((v) => !v)}
+                  >
+                    <i class="i-mdi-video-switch-outline" />
+                    <span>
+                      {t(
+                        `enter${observerMode() ? "PlayerView" : "ObserverMode"}`,
+                      )}
+                    </span>
+                  </button>
+                </Show>
+              </Show>
+            </div>
+            <div>
+              <Show when={initialized()}>
+                {(payload) => (
+                  <div class="flex group-data-[mobile]:flex-col flex-row items-center">
+                    <div>
+                      <span>
+                        {payload().myPlayerInfo.name}
+                        {props.action ? t("meLabel") : t("spectatingLabel")}
+                      </span>
+                      <span class="font-bold"> VS </span>
+                      <span>{payload().oppPlayerInfo.name}</span>
+                    </div>
+                    <span class="group-data-[mobile]:hidden">，</span>
+                    <span>
+                      {payload().who === 0
+                        ? t("youAreFirst")
+                        : t("youAreSecond")}
+                    </span>
+                  </div>
+                )}
+              </Show>
+            </div>
+          </div>
+          <button
+            class="hidden group-data-[mobile]:peer-checked:inline-flex btn btn-outline-blue whitespace-normal text-center leading-tight min-h-10 px-4 py-2"
+            onClick={() => {
+              navigate(paths());
+            }}
+          >
+            <i class="i-mdi-home" />
+            {t("backHome")}
+          </button>
+        </div>
+        <Show when={!loading()} fallback={loadingNotice()}>
+          <Errored
+            fallback={(err) => (
+              <div class="mb-3 alert alert-outline-error">
+                {t("roomLoadFailed", {
+                  message: failed() ?? getErrorMessage(err()),
+                })}
+              </div>
+            )}
+          >
+            <Loading fallback={loadingNotice()}>
+              <Switch>
+                <Match when={failed()}>
+                  <div class="mb-3 alert alert-outline-error">
+                    {t("roomLoadFailed", { message: failed() ?? "" })}
+                  </div>
+                </Match>
+                <Match when={!initialized() && roomInfo().status === "waiting"}>
+                  <div class="mb-3 alert alert-outline-info">
+                    {t("waitingForOpponent")}
+                  </div>
+                </Match>
+                <Match when={roomInfo().status === "finished"}>
+                  <div class="mb-3 alert alert-outline-info">
+                    {t("roomFinished")}
+                    <button
+                      class="btn btn-soft-info whitespace-normal text-center leading-tight min-h-10 px-4 py-2"
+                      onClick={downloadGameLog}
+                    >
+                      {t("downloadLog")}
+                    </button>
+                  </div>
+                </Match>
+              </Switch>
+            </Loading>
+          </Errored>
+        </Show>
+        <Show when={initialized()}>
+          {(payload) => (
+            <div class="relative" ref={chessboardContainer}>
+              <Chessboard
+                rotation={mobile() ? 90 : 0}
+                autoHeight={!mobile()}
+                class={mobile() && "mobile-chessboard h-100dvh w-100dvw"}
+                chessboardColor={status().chessboardColor ?? void 0}
+                timer={currentMyTimer() ?? currentOppTimer()}
+                myPlayerInfo={getClientPlayerInfo(payload().myPlayerInfo)}
+                oppPlayerInfo={getClientPlayerInfo(payload().oppPlayerInfo)}
+                gameEndExtra={
+                  <div class="flex justify-center gap-20 mt-10">
+                    <div class="flex flex-col justify-start w-36 h-30">
+                      <button
+                        class="px-4 py-1 w-36 h-10 mt-20 font-bold font-size-4.5 text-yellow-800 bg-yellow-50 rounded-full border-yellow-800 b-2 active:bg-yellow-800 active:text-yellow-200 hover:shadow-[inset_0_0_16px_white] hover:border-white"
+                        onClick={downloadGameLog}
+                      >
+                        {t("downloadLog")}
+                      </button>
+                      {/* <Show when={logtimer}>
+                        <span class="text-white/60 text-3">{logtimer}后到期</span>
+                      </Show> */}
+                    </div>
+                    <div class="flex flex-col justify-start w-36 h-30">
+                      <button
+                        class="px-4 py-1 w-36 h-10 mt-20 font-bold font-size-4.5 text-yellow-800 bg-yellow-50 rounded-full border-yellow-800 b-2 active:bg-yellow-800 active:text-yellow-200 hover:shadow-[inset_0_0_16px_white] hover:border-white"
+                        onClick={() => {
+                          navigate(paths());
+                        }}
+                      >
+                        {t("backHome")}
+                      </button>
+                    </div>
+                  </div>
+                }
+                spectatorMode={observerMode()}
+              />
+            </div>
+          )}
+        </Show>
+      </div>
+    </RoomLayout>
+  );
+}

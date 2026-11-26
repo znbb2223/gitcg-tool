@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>七圣召唤 · 布局调试器</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; background: #12161a; color: #e8e6e1; font-family: system-ui, sans-serif; }
+      #bar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; gap: 6px; align-items: center; padding: 6px 8px; background: rgba(31,36,42,0.92); border-bottom: 1px solid #343b43; flex-wrap: wrap; }
+      #bar strong { font-size: 13px; }
+      #bar button, #targets button, #panel button { padding: 6px 10px; border-radius: 8px; border: 1px solid #4a5560; background: #2a323b; color: #e8e6e1; font-size: 12px; }
+      #bar button.on { background: #c8a15a; color: #231a0d; border-color: #c8a15a; }
+      #bar button.save { background: #7fb286; color: #12200f; }
+      #info { font-size: 11px; color: #9aa0a6; margin-left: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      #targets { position: fixed; top: 40px; left: 0; right: 0; z-index: 99; display: flex; gap: 4px; padding: 5px 8px; background: rgba(25,30,35,0.92); border-bottom: 1px solid #343b43; overflow-x: auto; white-space: nowrap; }
+      #targets button { font-size: 11px; padding: 5px 8px; flex: none; }
+      #targets button.gold { border-color: #c8a15a; color: #f0d9a8; }
+      #stage { position: absolute; inset: 0; }
+      iframe { width: 100%; height: 100%; border: 0; background: #000; }
+      #panel { position: fixed; right: 8px; bottom: 8px; z-index: 50; background: #1f242a; border: 1px solid #4a5560; border-radius: 10px; padding: 8px; font-size: 12px; display: none; width: 268px; max-height: 82vh; overflow: auto; }
+      #panel label { color: #9aa0a6; font-size: 11px; }
+      #panel input { width: 64px; background: #12161a; color: #e8e6e1; border: 1px solid #4a5560; border-radius: 6px; padding: 4px; font-size: 12px; }
+      #panel .row { display: flex; gap: 5px; align-items: center; margin: 3px 0; flex-wrap: wrap; }
+      #panel .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+      #panel button { font-size: 11px; padding: 4px 7px; }
+      #cands { display: flex; flex-direction: column; gap: 3px; margin-top: 5px; max-height: 120px; overflow: auto; }
+      #cands button { text-align: left; font-size: 10px; padding: 3px 5px; border-radius: 6px; border: 1px solid #4a5560; background: #232a31; color: #d7dade; }
+      #list { font-size: 10px; color: #9aa0a6; max-height: 90px; overflow: auto; margin-top: 5px; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <div id="bar">
+      <strong>布局调试器</strong>
+      <button id="pick">点击选择：关</button>
+      <button id="scroll">滚动：开</button>
+      <button id="save" class="save">保存调整</button>
+      <button id="reset">重置</button>
+      <span id="info">先开局，点上方元素按钮；或开「点击选择」后点棋盘</span>
+    </div>
+    <div id="targets"></div>
+    <button id="collapse" style="position:fixed;left:6px;top:6px;z-index:102;padding:6px 10px;border-radius:8px;border:1px solid #c8a15a;background:#2a323b;color:#f0d9a8;font-size:12px">收起</button>
+    <div id="stage"><iframe id="game" src="/app.html"></iframe></div>
+    <div id="panel">
+      <div class="row"><b id="pname">元素</b></div>
+      <div id="dragbar" style="cursor:grab;text-align:center;padding:6px;margin:2px 0 6px;border-radius:8px;background:#c8a15a;color:#231a0d;font-weight:700;font-size:12px;touch-action:none;user-select:none">⠿ 按住拖动我移动选中元素</div>
+      <div class="row"><label>X</label><input id="dx" type="number" step="1" value="0" /><label>Y</label><input id="dy" type="number" step="1" value="0" /></div>
+      <div class="row"><label>宽</label><input id="pw" type="number" step="1" placeholder="auto" /><label>高</label><input id="ph" type="number" step="1" placeholder="auto" /></div>
+      <div class="row"><label>缩放</label><input id="scale" type="number" step="0.01" value="1" /><label>旋转</label><input id="rot" type="number" step="1" value="0" /></div>
+      <div class="row"><label>图层</label><input id="z" type="number" step="1" placeholder="auto" /><label>透明</label><input id="op" type="number" step="0.05" min="0" max="1" placeholder="1" /></div>
+      <div class="row grid">
+        <button id="nudgeL">← 左</button><button id="nudgeR">右 →</button>
+        <button id="nudgeU">↑ 上</button><button id="nudgeD">↓ 下</button>
+      </div>
+      <div class="row"><button id="apply">应用</button><button id="deselect">取消选择</button></div>
+      <div id="cands"></div>
+      <div id="list"></div>
+    </div>
+    <script>
+      const frame = document.getElementById("game");
+      let pickMode = false;
+      let scrollMode = true;
+      let selected = null;
+      let overlay = null;
+      const edits = new Map();
+
+      const keyOf = (el) => {
+        const layoutKey = el.getAttribute && el.getAttribute("data-layout-key");
+        if (layoutKey) return layoutKey;
+        const classes = (el.className || "")
+          .toString()
+          .split(/\s+/)
+          .filter((c) => c && !c.startsWith("data-"))
+          .slice(0, 4)
+          .join(".");
+        const text = (el.textContent || "").trim().slice(0, 10).replace(/\s+/g, " ");
+        return `${el.tagName.toLowerCase()}${classes ? "." + classes : ""}${text ? "|" + text : ""}`;
+      };
+
+      const getEdit = (el) => {
+        const k = keyOf(el);
+        if (!edits.has(k)) edits.set(k, { dx: 0, dy: 0, w: "", h: "", scale: 1, rot: 0, z: "", op: "" });
+        return edits.get(k);
+      };
+
+      function applyEdit(el) {
+        const e = getEdit(el);
+        el.style.translate = e.dx || e.dy ? `${e.dx}px ${e.dy}px` : "";
+        el.style.scale = e.scale !== 1 ? String(e.scale) : "";
+        el.style.rotate = e.rot ? `${e.rot}deg` : "";
+        el.style.width = e.w !== "" ? e.w + "px" : "";
+        el.style.height = e.h !== "" ? e.h + "px" : "";
+        el.style.zIndex = e.z !== "" ? String(e.z) : "";
+        el.style.opacity = e.op !== "" ? String(e.op) : "";
+      }
+
+      function boxOf(el) {
+        const doc = frame.contentDocument;
+        if (!overlay) {
+          overlay = doc.createElement("div");
+          overlay.style.cssText =
+            "position:fixed;z-index:999999;border:2px solid #c8a15a;box-shadow:0 0 0 2px #0008,0 0 12px #c8a15a88;pointer-events:none;border-radius:6px";
+          doc.body.appendChild(overlay);
+        }
+        const r = el.getBoundingClientRect();
+        overlay.style.left = r.left + "px";
+        overlay.style.top = r.top + "px";
+        overlay.style.width = r.width + "px";
+        overlay.style.height = r.height + "px";
+      }
+
+      function showPanel(el) {
+        const panel = document.getElementById("panel");
+        panel.style.display = "block";
+        document.getElementById("pname").textContent = keyOf(el).slice(0, 70);
+        const e = getEdit(el);
+        document.getElementById("dx").value = e.dx;
+        document.getElementById("dy").value = e.dy;
+        document.getElementById("pw").value = e.w;
+        document.getElementById("ph").value = e.h;
+        document.getElementById("scale").value = e.scale;
+        document.getElementById("rot").value = e.rot;
+        document.getElementById("z").value = e.z;
+        document.getElementById("op").value = e.op;
+      }
+
+      function select(el) {
+        selected = el;
+        boxOf(el);
+        showPanel(el);
+        document.getElementById("info").textContent = "已选中：" + keyOf(el).slice(0, 60);
+        renderTargets();
+      }
+
+      function targets() {
+        const doc = frame.contentDocument;
+        if (!doc) return [];
+        const out = [];
+        const add = (name, el) => el && out.push({ name, el });
+        const vis = (el) => el && el.getBoundingClientRect().width > 0;
+        const byY = (arr) => arr.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+        add("回合圆盘", byY(Array.from(doc.querySelectorAll(".declare-end-marker")))[0]);
+        const counts = byY(
+          Array.from(
+            doc.querySelectorAll(
+              '[data-layout-key="oppDiceCount"], [data-layout-key="myDiceCount"]',
+            ),
+          ).filter(vis),
+        );
+        add("上方骰子数", counts[0]);
+        add("下方骰子数", counts[counts.length - 1]);
+        add("上牌堆", doc.querySelector('[data-layout-key="oppPile"]'));
+        add("下牌堆", doc.querySelector('[data-layout-key="myPile"]'));
+        add("上牌堆数量", doc.querySelector('[data-layout-key="oppPileCount"]'));
+        add("下牌堆数量", doc.querySelector('[data-layout-key="myPileCount"]'));
+        add("我方骰子栏", doc.querySelector('[data-layout-key="myDiceBar"]') || doc.querySelector(".dice-bar-my"));
+        add("对方骰子栏", doc.querySelector('[data-layout-key="oppDiceBar"]'));
+        add("骰子面板", doc.querySelector('[data-layout-key="myDicePanel"]') || doc.querySelector('[class*="dice-panel"]'));
+        add("技能按钮", doc.querySelector(".skill-button"));
+        add("右下角色按钮", doc.querySelector(".switch-active-button") || doc.querySelector('[class*="switch"]'));
+        add("上方状态条", doc.querySelector('[class*="player-info"]'));
+        const topBtns = Array.from(doc.querySelectorAll("button")).filter((b) => b.getBoundingClientRect().top < 60 && vis(b));
+        add("右上按钮组", topBtns[topBtns.length - 1] || null);
+        return out.filter((t) => t.el);
+      }
+
+      function renderTargets() {
+        const box = document.getElementById("targets");
+        box.innerHTML = "";
+        const list = targets();
+        if (!list.length) box.textContent = "还没加载出棋盘，先开一局";
+        for (const t of list) {
+          const b = document.createElement("button");
+          b.textContent = t.name;
+          if (selected === t.el) b.className = "gold";
+          b.onclick = () => select(t.el);
+          box.appendChild(b);
+        }
+      }
+
+      function showCandidates(ev) {
+        const doc = frame.contentDocument;
+        const els = doc.elementsFromPoint(ev.clientX, ev.clientY);
+        const box = document.getElementById("cands");
+        box.innerHTML = "";
+        for (const el of els.slice(0, 10)) {
+          if (el === overlay) continue;
+          const b = document.createElement("button");
+          b.textContent = keyOf(el).slice(0, 50);
+          b.onclick = () => select(el);
+          box.appendChild(b);
+        }
+      }
+
+      function bind() {
+        const doc = frame.contentDocument;
+        if (!doc || !doc.body) return;
+        doc.addEventListener(
+          "click",
+          (ev) => {
+            if (!pickMode) return;
+            ev.preventDefault();
+            ev.stopPropagation();
+            const el = ev.target;
+            select(el);
+            showCandidates(ev);
+          },
+          true,
+        );
+        let dragging = false;
+        let startX = 0, startY = 0, baseDx = 0, baseDy = 0;
+        doc.addEventListener(
+          "pointerdown",
+          (ev) => {
+            if (!selected) return;
+            const r = selected.getBoundingClientRect();
+            const inside = ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom;
+            if (!inside && ev.target !== selected) return;
+            dragging = true;
+            startX = ev.clientX;
+            startY = ev.clientY;
+            const e = getEdit(selected);
+            baseDx = e.dx;
+            baseDy = e.dy;
+            ev.preventDefault();
+            ev.stopPropagation();
+          },
+          true,
+        );
+        doc.addEventListener(
+          "pointermove",
+          (ev) => {
+            if (!dragging || !selected) return;
+            const e = getEdit(selected);
+            e.dx = Math.round(baseDx + (ev.clientX - startX));
+            e.dy = Math.round(baseDy + (ev.clientY - startY));
+            applyEdit(selected);
+            boxOf(selected);
+            ev.preventDefault();
+          },
+          true,
+        );
+        doc.addEventListener("pointerup", () => {
+          if (dragging) {
+            dragging = false;
+            showPanel(selected);
+          }
+        }, true);
+        document.getElementById("info").textContent = "已连接棋盘，点上方元素按钮或棋盘元素";
+        renderTargets();
+        setInterval(renderTargets, 2000);
+      }
+
+      frame.addEventListener("load", () => setTimeout(bind, 1200));
+
+      document.getElementById("pick").onclick = (e) => {
+        pickMode = !pickMode;
+        e.target.classList.toggle("on", pickMode);
+        e.target.textContent = "点击选择：" + (pickMode ? "开" : "关");
+      };
+      document.getElementById("scroll").onclick = (e) => {
+        scrollMode = !scrollMode;
+        e.target.textContent = "滚动：" + (scrollMode ? "开" : "关");
+        const doc = frame.contentDocument;
+        if (doc) {
+          doc.documentElement.style.overflow = scrollMode ? "" : "hidden";
+          if (doc.body) doc.body.style.overflow = scrollMode ? "" : "hidden";
+        }
+      };
+      let collapsed = false;
+      document.getElementById("collapse").onclick = (e) => {
+        collapsed = !collapsed;
+        document.getElementById("bar").style.display = collapsed ? "none" : "flex";
+        document.getElementById("targets").style.display = collapsed ? "none" : "flex";
+        e.target.textContent = collapsed ? "展开" : "收起";
+      };
+
+      document.getElementById("apply").onclick = () => {
+        if (!selected) return;
+        const e = getEdit(selected);
+        e.dx = Number(document.getElementById("dx").value) || 0;
+        e.dy = Number(document.getElementById("dy").value) || 0;
+        e.w = document.getElementById("pw").value;
+        e.h = document.getElementById("ph").value;
+        e.scale = Number(document.getElementById("scale").value) || 1;
+        e.rot = Number(document.getElementById("rot").value) || 0;
+        e.z = document.getElementById("z").value;
+        e.op = document.getElementById("op").value;
+        applyEdit(selected);
+        boxOf(selected);
+        renderList();
+      };
+
+      const nudge = (dx, dy) => {
+        if (!selected) return;
+        const e = getEdit(selected);
+        e.dx += dx;
+        e.dy += dy;
+        applyEdit(selected);
+        boxOf(selected);
+        showPanel(selected);
+      };
+      document.getElementById("nudgeL").onclick = () => nudge(-2, 0);
+      document.getElementById("nudgeR").onclick = () => nudge(2, 0);
+      document.getElementById("nudgeU").onclick = () => nudge(0, -2);
+      document.getElementById("nudgeD").onclick = () => nudge(0, 2);
+
+      let barDrag = null;
+      const dragbar = document.getElementById("dragbar");
+      dragbar.addEventListener("pointerdown", (e) => {
+        if (!selected) return;
+        e.preventDefault();
+        const ed = getEdit(selected);
+        barDrag = { x: e.clientX, y: e.clientY, dx: ed.dx, dy: ed.dy };
+        dragbar.setPointerCapture?.(e.pointerId);
+      });
+      window.addEventListener("pointermove", (e) => {
+        if (!barDrag || !selected) return;
+        const ed = getEdit(selected);
+        ed.dx = Math.round(barDrag.dx + e.clientX - barDrag.x);
+        ed.dy = Math.round(barDrag.dy + e.clientY - barDrag.y);
+        applyEdit(selected);
+        boxOf(selected);
+        document.getElementById("dx").value = ed.dx;
+        document.getElementById("dy").value = ed.dy;
+      });
+      window.addEventListener("pointerup", () => {
+        barDrag = null;
+      });
+
+      document.getElementById("deselect").onclick = () => {
+        if (overlay) overlay.remove();
+        overlay = null;
+        selected = null;
+        document.getElementById("panel").style.display = "none";
+        renderTargets();
+      };
+
+      function renderList() {
+        const lines = [];
+        for (const [k, e] of edits) lines.push(`${k}\n  dx=${e.dx} dy=${e.dy} w=${e.w} h=${e.h} s=${e.scale} r=${e.rot} z=${e.z} o=${e.op}`);
+        document.getElementById("list").textContent = lines.join("\n");
+      }
+
+      document.getElementById("save").onclick = async () => {
+        const data = [];
+        for (const [k, e] of edits) data.push({ key: k, ...e });
+        const body = JSON.stringify({ viewport: [innerWidth, innerHeight], edits: data });
+        try {
+          await fetch("/save", { method: "POST", headers: { "content-type": "application/json" }, body });
+          await navigator.clipboard?.writeText(body).catch(() => {});
+          document.getElementById("info").textContent = "已保存：" + data.length + " 个元素";
+        } catch (err) {
+          document.getElementById("info").textContent = "保存失败：" + err;
+        }
+      };
+
+      document.getElementById("reset").onclick = () => {
+        const doc = frame.contentDocument;
+        if (doc) {
+          for (const el of doc.querySelectorAll("*")) {
+            if (el.style && (el.style.translate || el.style.scale || el.style.rotate || el.style.zIndex || el.style.opacity || el.style.width || el.style.height)) {
+              el.style.cssText = "";
+            }
+          }
+        }
+        edits.clear();
+        renderList();
+        document.getElementById("info").textContent = "已重置";
+      };
+    </script>
+  </body>
+</html>

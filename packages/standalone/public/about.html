@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <link rel="stylesheet" href="/responsive.css" />
+    <title>七圣召唤工具 · 关于</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --gold: #e3c27e;
+        --ink: #f2ead9;
+        --muted: #94866c;
+        --line: rgba(227, 194, 126, 0.18);
+      }
+      * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+      html, body { min-height: 100%; }
+      body {
+        margin: 0;
+        padding: 16px 16px 36px;
+        color: var(--ink);
+        font-family: system-ui, -apple-system, "Helvetica Neue", "Noto Sans SC", sans-serif;
+        background:
+          linear-gradient(180deg, rgba(8, 14, 21, 0.88), rgba(6, 10, 16, 0.96)),
+          url("/assets-local/ui/ChessboardBackground.webp") center / cover no-repeat,
+          linear-gradient(180deg, #16222e, #0a1119 72%);
+        background-blend-mode: normal, luminosity, normal;
+        background-attachment: fixed, fixed, fixed;
+      }
+      .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      h1 {
+        margin: 0;
+        font-size: clamp(19px, 5.2vw, 24px);
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        background: linear-gradient(180deg, #f7e6bd, #c9a660);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .back {
+        flex: none;
+        padding: 8px 14px;
+        border-radius: 9px;
+        border: 1px solid rgba(227, 194, 126, 0.45);
+        background: rgba(227, 194, 126, 0.1);
+        color: #f0dcaa;
+        font: inherit;
+        font-size: 13px;
+        text-decoration: none;
+      }
+      .lede { margin: 10px 0 18px; font-size: 13px; line-height: 1.7; color: var(--muted); }
+      section {
+        margin-bottom: 14px;
+        padding: 14px 15px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: linear-gradient(160deg, rgba(38, 54, 70, 0.6), rgba(14, 21, 29, 0.86));
+      }
+      h2 {
+        margin: 0 0 8px;
+        font-size: 15px;
+        letter-spacing: 0.06em;
+        color: #f0dfb8;
+      }
+      section p, section li { margin: 6px 0; font-size: 13px; line-height: 1.75; color: #e6dcc8; }
+      section ul { margin: 6px 0; padding-left: 18px; }
+      a { color: #e3c27e; word-break: break-all; }
+      .kv { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+      .tag {
+        display: inline-block;
+        padding: 1px 7px;
+        margin-right: 6px;
+        border-radius: 999px;
+        border: 1px solid rgba(227, 194, 126, 0.35);
+        font-size: 11px;
+        color: #e3c27e;
+      }
+      code {
+        padding: 1px 5px;
+        border-radius: 4px;
+        background: rgba(0, 0, 0, 0.35);
+        font-size: 12px;
+        word-break: break-all;
+      }
+      .foot { margin-top: 16px; text-align: center; font-size: 11.5px; color: var(--muted); }
+      @media (min-width: 720px) {
+        body { max-width: 760px; margin: 0 auto; }
+      }
+    </style>
+  
+    <style id="app-feel">
+      * { -webkit-tap-highlight-color: transparent !important; }
+      html, body { overscroll-behavior: none; }
+      body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+      button, a, select, input, textarea { -webkit-appearance: none; appearance: none; outline: none !important; }
+      ::selection { background: transparent; }
+      ::-webkit-scrollbar { width: 0; height: 0; }
+    </style>
+    <link rel="stylesheet" href="/genshin-ui.css" />
+      <script>
+      // 跟随「主体方向」设置（模拟器对局除外），进页立即应用
+      setTimeout(() => {
+        if (localStorage.getItem("gitcg.mainOrientation") === "landscape") {
+          window.AndroidHost?.setOrientation?.("landscape");
+        }
+      }, 300);
+    </script>
+</head>
+  <body>
+    <header class="top">
+      <h1>关 于</h1>
+      <a class="back" href="/index.html">返回首页</a>
+    </header>
+
+    <p class="lede">
+      一个跑在 Android WebView 里的《七圣召唤》离线工具箱：内置模拟器、组牌器、摆盘器、卡组实验室与牌组库。
+      断网也能对局、组牌、查牌组、做克制推演，并把结果导出成文件分享或留存。
+    </p>
+
+    <section>
+      <h2>一、这是什么</h2>
+      <ul>
+        <li><b>七圣召唤模拟器</b>：本地人机对战、机机观战，支持导入牌组码与对局日志重演；
+          对局中可随时暂停、摆盘、切横竖屏，结束后自动记录胜负。</li>
+        <li><b>组牌器</b>：按角色、元素、费用、卡牌类型筛选卡池；AI 可现场组一套合法牌组；
+          一键生成规范顺序的分享码与牌组图，也能直接加入牌组库。</li>
+        <li><b>摆盘器</b>：编辑手牌、牌库、出战角色、支援区、召唤区与全局状态，摆好局面直接开局或导出状态。</li>
+        <li><b>卡组实验室</b>：对一套目标牌组做超深搜索，用多线程穷举候选牌组并统计击败率，
+          找出最能克制它的牌组；还能按元素、伤害方式、角色筛选结果。</li>
+        <li><b>牌组库</b>：收录 4,500+ 套社区牌组，按流派、标签、来源、作者筛选；
+          每套牌都有胜率、同风格对比、流派对局、五段打法说明，还能在本地训练补齐样本。</li>
+        <li><b>设置与备份</b>：AI 数据（对局日志 + 决策记忆）与牌组库都能导出/导入；
+          导出的文件按分类存放在「下载/七圣召唤工具/」下。</li>
+      </ul>
+      <div class="kv">
+        <span>数据版本 7.2.0</span><span>构建 0.11.152</span><span>离线运行</span><span>AGPL-3.0</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>二、能力与细节</h2>
+      <ul>
+        <li><b>规则校验</b>：组牌器、模拟器、实验室、训练共用一套校验——
+          3 张角色、30 张行动牌、同名≤2、天赋牌必须有对应角色、元素/阵营共鸣需≥2 名匹配角色；
+          秘传牌按实际规则可带多张（对局内只能打出 1 张）。</li>
+        <li><b>多线程</b>：实验室搜索、牌组库训练、模拟器的搜索推演都按「CPU 核心数 − 1」开线程，
+          能跑满多核；快速自对弈走轻量推演，深度强化走完整 AI 评估。</li>
+        <li><b>三套独立 AI 设置</b>：模拟器、实验室、牌组库训练各自保存「延时 / 失误率 / 风格 / 六项评分权重」，
+          互不影响；导出 AI 数据时会一起打包。</li>
+        <li><b>牌组码规范</b>：AI 生成或随机组出的牌组，会先按「天赋 → 装备 → 支援 → 事件 → 料理」排好再编码，
+          分享码本身就带正确顺序。</li>
+        <li><b>牌组图</b>：头部依次是标题、版本、单行牌组码、分隔线与阵容；支持 JPG（约 1MB）与无损 PNG 两种画质。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>三、开源项目与源码地址</h2>
+      <p>
+        本软件的游戏引擎、卡牌数据与对战规则来自开源项目
+        <b>gi-tcg / genius-invokation</b>（AGPL-3.0）：
+      </p>
+      <ul>
+        <li>源码：<a href="https://github.com/gi-tcg/genius-invokation">https://github.com/gi-tcg/genius-invokation</a></li>
+        <li>文档：<a href="https://gi-tcg.github.io/">https://gi-tcg.github.io/</a></li>
+        <li>许可：<span class="tag">AGPL-3.0</span>本软件在该项目基础上做了离线资源镜像、竖屏工具链、多线程 AI 与安卓壳封装，同样按 AGPL-3.0 分发。</li>
+      </ul>
+      <p>
+        AGPL-3.0（GNU Affero 通用公共许可证第 3 版）是 GPLv3 的「网络服务加强版」，核心意思有三点：
+      </p>
+      <ul>
+        <li><b>自由使用与修改</b>：任何人都可以免费使用、修改、再分发本软件（可商用）。</li>
+        <li><b>修改必须同样开源</b>（copyleft）：分发修改版时，源代码必须按 AGPL-3.0 提供给接收者。</li>
+        <li><b>网络服务也要给源码</b>：这是它和 GPL 最大的区别——即使不「分发」软件、只是把改过的版本放在服务器上给用户远程使用，用户也有权获取对应的完整源代码。就是为了堵住「用 GPL 代码做闭源 SaaS」的漏洞而生的。</li>
+      </ul>
+      <p>
+        对本工具而言：离线运行在你自己手机上，正常使用没有任何义务；如果基于它修改并对外提供服务或分发，
+        把改动后的源码按 AGPL-3.0 公开即可。协议原文见 <a href="https://www.gnu.org/licenses/agpl-3.0.html">gnu.org/licenses/agpl-3.0.html</a>。
+      </p>
+      <p>
+        主要用到的子包：<code>@gi-tcg/core</code>（对局引擎）、<code>@gi-tcg/card-data</code>（7.2.0 卡牌与技能）、
+        <code>@gi-tcg/ai</code>（组牌与自动对战）、<code>@gi-tcg/standalone</code>（界面）。
+      </p>
+      <p>
+        游戏内卡面、元素骰图标等美术素材版权归 miHoYo / HoYoverse 所有，仅供本地学习与交流使用。
+      </p>
+      <p>
+        <b>支持范围</b>：安卓 10（Android 10 / API 29）及以上的所有版本，包括 15、16 等新系统；
+        系统 WebView（Android System WebView）建议 105 及以上版本（约 2022 年 9 月后），
+        可获得全部界面特性；80~104 版本基本可用，个别样式（容器查询等）会降级显示。
+        本应用<b>不需要联网权限</b>，全部资源内置，断网可用。
+      </p>
+      <p>
+        <b>开发资料</b>：本应用的全部开发文档（交接说明、项目攻略、构建打包速查、版本日志）
+        已随包放在 APK 的 <code>assets/dev-docs/</code> 目录里，方便其他开发者或 AI 接手迭代；
+        解包 APK（改后缀为 zip 即可）即可阅读。修改后的分发须遵守 AGPL-3.0（改动源码同样开源）。
+      </p>
+    </section>
+
+    <section>
+      <h2>四、开发过程与经验</h2>
+      <p>
+        这个工具不是一次写完的，而是从「能对局」到「像手机工具」再到「数据与 AI 打磨」一层层叠出来的。
+        下面是每一层的关键决策和踩过的坑。
+      </p>
+
+      <h2 style="font-size:14px;margin-top:12px">1. 离线化：把线上引擎搬进手机</h2>
+      <ul>
+        <li>卡牌数据、角色、卡面、元素骰图标全部镜像到本地 <code>assets-local</code>，按版本号落盘，断网可用。</li>
+        <li>构建顺序固定为 <code>state-editor → deck-builder → standalone</code>，安卓壳只加载本地 HTTP 服务，不联网。</li>
+        <li>每次发版递增 <code>versionCode</code> 与首页构建号，避免 WebView 用旧缓存引到已删除的 JS。</li>
+      </ul>
+
+      <h2 style="font-size:14px;margin-top:12px">2. 手机工具化：让它不像网页</h2>
+      <ul>
+        <li>首页一屏放下六个入口：用 <code>clamp()</code> 随屏幕高度缩放，短屏自动两列并收起描述。</li>
+        <li>去掉浏览器痕迹：点按不闪蓝、禁止选中与长按菜单、隐藏滚动条、WebView 关闭缩放手势与过度滚动。</li>
+        <li>安全区交给壳层：状态栏透明、竖屏留状态栏高度、横屏隐藏系统栏；小窗/分屏不留顶部空白。</li>
+        <li>比例适配按「高度 + 方向」判断，而不是宽高比——宽高比是宽÷高，竖屏几乎都会命中 16:9 规则。</li>
+      </ul>
+
+      <h2 style="font-size:14px;margin-top:12px">3. 规则校验：把「合法」补齐</h2>
+      <ul>
+        <li>本地规则 + 引擎规则双层校验：天赋牌要对应角色，元素/阵营共鸣要 2 名匹配角色。</li>
+        <li>「随机」曾经自己凑 30 张，绕过限制带出非法牌；后来改成 <code>buildDeck</code> 生成再校验。</li>
+        <li>秘传牌按官方实际规则修正：可带多张，对局内只能打出 1 张，组牌器不再强行删到 1 张。</li>
+      </ul>
+
+      <h2 style="font-size:14px;margin-top:12px">4. AI 与多线程</h2>
+      <ul>
+        <li>训练数据来自自对弈：按「3 角色 + 30 张牌」指纹分桶统计胜率，样本少时向角色/卡牌均值做贝叶斯收缩。</li>
+        <li>作者说明提炼成「起手/中期/注意/弱点/结论」五段，喂给 AI 做留牌与出牌偏好。</li>
+        <li>实验室搜索、训练、搜索推演都改为多 worker 并行；线程数 = CPU 核心数 − 1。</li>
+        <li>批量训练里强制 AI 思考延时为 0，否则线程会大量空转（曾出现深度模式 CPU 只有 43%）。</li>
+      </ul>
+
+      <h2 style="font-size:14px;margin-top:12px">5. 牌组库数据管线</h2>
+      <ul>
+        <li>抓取 → 指纹去重 → 作者标签合并 → 说明提炼 → 克制关系 → 生成牌组索引（4,500+ 套，含卡牌 id 反查）。</li>
+        <li>少数说明被抓成了 JSON 原文，清洗脚本会解析 <code>describe</code>、去掉表情标记与分享码，展示层再做兜底。</li>
+      </ul>
+
+      <h2 style="font-size:14px;margin-top:12px">6. 踩过的坑（真实记录）</h2>
+      <ul>
+        <li><b>牌组码自带顺序</b>：AI 生成后再编码没排序，会出现武器夹在料理中间；现在统一按类型排序再编码。</li>
+        <li><b>「单卡先验」写错字段</b>：曾写成 <code>this.options.cardPriors</code>，但 AI 没有 <code>options</code> 字段，
+          导致每次出牌都抛异常、对局直接判负——牌组库训练一度出现「100 战 100 胜」。</li>
+        <li><b>训练 2 场要半分钟</b>：训练方式没有传给 worker，快速模式也在跑完整 AI 评估。</li>
+        <li><b>首页说明消失</b>：用 <code>max-aspect-ratio: 16/9</code> 判断短屏，结果竖屏全部命中，描述被隐藏。</li>
+        <li><b>WebView 全屏主题</b>：<code>Theme.NoTitleBar.Fullscreen</code> 会把状态栏藏掉，改成 <code>Theme.NoTitleBar</code>。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>五、心得指南（给使用者的上手建议）</h2>
+      <ul>
+        <li><b>先看牌组库，再动手改</b>：同一套牌往往有多个版本，先按「同风格对比」挑胜率健康的版本，再微调。</li>
+        <li><b>组牌器优先用「AI 生成」</b>：它自带合法校验，比手工凑 30 张省心；随机用于找灵感。</li>
+        <li><b>实验室的正确用法</b>：粘贴对手牌组码 → 选「5 分钟」→ 开始搜索；
+          结果按击败率排序，点卡片可看详情，新发现的牌组会自动写进牌组库（来源「实验室新发现」）。</li>
+        <li><b>训练怎么选</b>：想快速刷样本选「快速自对弈」；想看完整 AI 评估选「深度强化」。
+          两者都会把结果写进这套牌的本地战绩与对局日志。</li>
+        <li><b>三处 AI 设置互不影响</b>：模拟器、实验室、训练各调各的；调完记得点保存，下次开局/开训生效。</li>
+        <li><b>备份节奏</b>：换机或清理缓存前，先在设置里导出「AI 数据备份」与「牌组库备份」；
+          文件会进 <code>下载/七圣召唤工具/</code> 对应分类目录。</li>
+        <li><b>分享图</b>：牌组库、组牌器、实验室三处的牌组图已统一版式；
+          高画质开关对三处同时生效。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>六、版本日志</h2>
+      <ul>
+        <li><b>0.11.152</b>：修复实验室搜索结果返回后误变「实验室新发现」；跨页跳转改用牌组库条目 id。</li>
+        <li><b>0.11.150</b>：实验室搜索支持自设每副候选对局数（2~30 局）；搜索结果牌组码规范化；摆盘器快照对局重新写入对局日志缓存。</li>
+        <li><b>0.11.148</b>：摆盘器开局与日志回放统一为模拟器配置页同一套布局（宽屏棋盘 + 新背景）。</li>
+        <li><b>0.11.144</b>：20:9 屏幕专用回滚 0.11.121 版棋盘布局；设置里三个布局选项在 20:9 下不生效。</li>
+        <li><b>0.11.143</b>：新增「主体方向」设置（工具页横/竖屏，模拟器始终横屏）；组牌器窄屏顶栏压缩；摆盘器返回层级理顺。</li>
+        <li><b>0.11.139</b>：锚点偏移布局（棋盘上下镜像、行间距固定、手牌贴边），四种屏幕比例逐项校准。</li>
+        <li><b>0.11.111</b>：关于页扩写；全局文案润色；「决斗记忆」统一改为「对局日志」。</li>
+        <li><b>0.11.110</b>：修复首页说明被隐藏（宽高比判断写反）；文案统一。</li>
+        <li><b>0.11.109</b>：全页面覆盖 16:9 / 18:9 / 19.5:9 / 20:9 / 21:9 / 23:9 / 4:3 / 16:10 / 6:5。</li>
+        <li><b>0.11.108</b>：小窗/分屏适配；对局棋盘等比缩放；小窗首页可滚动。</li>
+        <li><b>0.11.107</b>：深度强化训练不再空转（思考延时强制为 0）。</li>
+        <li><b>0.11.106</b>：快速训练走轻量推演，2 场约 3 秒；删除牌组图多余按钮。</li>
+        <li><b>0.11.105</b>：训练按钮状态、进度实时刷新、线程数固定核数−1、搜索日志汉化。</li>
+        <li><b>0.11.104</b>：修复 AI 单卡先验字段错误导致的对局崩溃（训练 100% 胜的根因）。</li>
+        <li><b>0.11.103</b>：搜索/训练/模拟器 AI 多线程化。</li>
+        <li><b>0.11.100</b>：导出改为「下载/七圣召唤工具/分类目录」。</li>
+        <li><b>0.11.099</b>：牌组图头部按文字边缘排布，三处渲染器统一。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>七、反馈</h2>
+      <p>
+        遇到问题或有想法，可以直接在对话里说；数据方面的建议（新卡、错漏说明、更准的克制关系）也欢迎。
+        如果某个界面的文字描述与实际不符，也请指出，会尽快修正。
+      </p>
+    </section>
+
+    <div class="foot">由七圣召唤工具生成 · DSH-Go · AGPL-3.0</div>
+    <script>
+      window.__dshBack = () => "back";
+    </script>
+  </body>
+</html>

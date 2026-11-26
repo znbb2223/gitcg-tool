@@ -1,0 +1,22 @@
+node_modules/
+dist/
+dist-lab/
+build/
+.turbo/
+.cache/
+*.log
+.DS_Store
+# 素材（游戏美术资源不入库，需自行用脚本获取）
+packages/standalone/public/assets-local/
+packages/standalone/public/assets/
+packages/standalone/public/data/
+packages/standalone/public/audio/
+trainer-portable/
+# 训练器运行时产物
+trainer/learning.json
+trainer/gitcg-trained-ai-*.json
+# 动画渲染产物
+promo/output/
+promo/frames/
+promo/frames2/
+promo/media/

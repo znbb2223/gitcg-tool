@@ -1,0 +1,510 @@
+@import "@gi-tcg/card-data-viewer/style.css";
+
+@layer base, reactive;
+
+@layer base {
+  .gi-tcg-deck-builder {
+    /* Apply some useful reset. See https://github.com/unocss/unocss/blob/main/packages-presets/reset/tailwind-compat.css */
+
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+    -moz-tab-size: 4;
+    tab-size: 4;
+    font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+      "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font-feature-settings: normal;
+    font-variation-settings: normal;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+
+    *,
+    ::before,
+    ::after {
+      box-sizing: border-box;
+      /* border-width: 0;  */
+      border-style: solid;
+      border-color: var(--un-default-border-color, #3d3527);
+    }
+
+    ol,
+    ul,
+    menu {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    button,
+    input,
+    optgroup,
+    select,
+    textarea {
+      font-family: inherit;
+      font-feature-settings: inherit;
+      font-variation-settings: inherit;
+      font-size: 100%;
+      font-weight: inherit;
+      line-height: inherit;
+      color: inherit;
+      margin: 0;
+      padding: 0;
+    }
+
+    button,
+    select {
+      text-transform: none;
+    }
+
+    button,
+    [type="button"],
+    [type="reset"],
+    [type="submit"] {
+      appearance: none;
+      /* https://github.com/unocss/unocss/issues/2127 */
+      /* background-color: transparent; */
+      background-image: none;
+    }
+
+    img,
+    svg,
+    video,
+    canvas,
+    audio,
+    iframe,
+    embed,
+    object {
+      display: block;
+      vertical-align: middle;
+    }
+  }
+  img,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+.gi-tcg-deck-builder {
+  contain: strict;
+  user-select: none;
+  -webkit-touch-callout: none;
+  
+  .pool-card {
+    --border-color: rgb(107 114 128 / 0.9);
+  }
+
+  .pool-card[data-invalid] {
+    --border-color: rgb(209 213 219 / 0.9);
+    --card-opacity: 0.4;
+  }
+
+  .pool-card[data-partial-selected] {
+    --border-color: rgb(202 138 4 / 0.9);
+  }
+
+  .pool-card[data-selected]:not([data-partial-selected]) {
+    --border-color: rgb(22 163 74 / 0.9);
+    --card-brightness: 0.4;
+  }
+
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hidden {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* ---------- 组牌器新外壳（0.10.71）：卡池 + 牌组侧栏/底部抽屉 ---------- */
+.gi-tcg-deck-builder.gi-deck {
+  border-width: 0;
+  position: relative;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  color: #2e281f;
+}
+
+.gi-deck-pool {
+  border-width: 0;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  overflow: hidden;
+  /* 卡池里的 z-100 悬浮层不能盖到牌组抽屉上 */
+  position: relative;
+  isolation: isolate;
+}
+
+.gi-deck-loading {
+  padding: 24px;
+  font-size: 13px;
+  color: #a89a80;
+}
+
+.gi-deck-side {
+  border-width: 0;
+  flex: none;
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid #3d3527;
+  background: #241f17;
+}
+
+.gi-deck-handle {
+  display: none;
+}
+
+.gi-deck-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+/* 组牌器全局把 border-width 留在了默认 3px，新加的区块要显式清掉，否则每个元素都带灰框 */
+.gi-deck-side :where(*),
+.gi-deck-pool :where(*) {
+  border-width: 0;
+}
+
+/* 牌组内容 */
+.gi-deck-board {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 12px;
+  color: #2e281f;
+}
+
+.gi-deck-row h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a3f2d;
+}
+
+.gi-deck-row h3 em {
+  font-style: normal;
+  font-weight: 400;
+  color: #a89a80;
+}
+
+.gi-deck-chars {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.gi-deck-char,
+.gi-deck-card {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  display: block;
+}
+
+.gi-deck-card-img {
+  display: block;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.gi-deck-slot-empty {
+  border: 1px dashed #94866c;
+  border-radius: 8px;
+  aspect-ratio: 7 / 12;
+  background: #201b13;
+}
+
+.gi-deck-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
+  gap: 6px;
+}
+
+.gi-deck-badge {
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  padding: 1px 4px;
+  border-radius: 6px;
+  background: #ece5d8;
+  color: #241f17;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.gi-deck-hint {
+  margin: 0;
+  font-size: 12px;
+  color: #a89a80;
+  line-height: 1.6;
+}
+
+.gi-deck-tip {
+  margin: 0;
+  font-size: 11px;
+  color: #7d715c;
+}
+
+.filter-menu-close {
+  display: none;
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(211, 188, 142, 0.18);
+  color: #d3bc8e;
+  font-size: 10px;
+  line-height: 1;
+  z-index: 3;
+  cursor: pointer;
+}
+/* ✕ 在弹层菜单内部（checkbox 的后代），需用后代选择器 */
+.filter-menu-control:checked ~ div[class*="FM:grid-area"] .filter-menu-close {
+  display: flex;
+}
+
+@media (max-width: 900px) {
+  .gi-tcg-deck-builder.gi-deck {
+    flex-direction: column;
+    padding-bottom: 54px;
+  }
+
+  .gi-deck-pool {
+    padding: 6px;
+  }
+
+  .gi-deck-side {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    width: auto;
+    max-height: 76%;
+    border-left: 0;
+    border-top: 1px solid #3d3527;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -10px 28px rgba(15, 23, 42, 0.18);
+    transform: translateY(calc(100% - 54px));
+    transition: transform 180ms ease;
+  }
+
+  .gi-deck-side[data-open] {
+    transform: none;
+  }
+
+  .gi-deck-handle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    height: 54px;
+    padding: 0 12px;
+    border: 0;
+    border-bottom: 1px solid #1c1711;
+    background: #241f17;
+    border-radius: 16px 16px 0 0;
+    cursor: pointer;
+  }
+
+  .gi-deck-handle-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ece5d8;
+  }
+
+  .gi-deck-stat {
+    font-size: 11px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: #2b251b;
+    color: #94866c;
+    white-space: nowrap;
+  }
+
+  .gi-deck-stat[data-ok] {
+    background: #16321f;
+    color: #15803d;
+  }
+
+  .gi-deck-handle-action {
+    margin-left: auto;
+    font-size: 12px;
+    color: #0f766e;
+    white-space: nowrap;
+  }
+
+  .gi-deck-body {
+    padding: 10px 10px 16px;
+  }
+}
+
+
+/* 触屏上没有 hover：放大镜浮层只在鼠标设备显示，点按直接出详情 */
+@media (hover: none) {
+  .card-hover-bar {
+    display: none !important;
+  }
+}
+
+/* 牌组里的移除按钮 */
+.gi-deck-remove {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  /* 必须高过 Card 里 z-100 的长按透明层，否则点击被那层吃掉、变成看详情 */
+  z-index: 130;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.82);
+  color: #241f17;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.gi-deck-remove:hover {
+  background: rgba(185, 28, 28, 0.9);
+}
+
+
+/* 详情面板：手机上是居中弹层，点遮罩或右上角 × 关闭 */
+.gi-card-viewer {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  pointer-events: none;
+  /* 组牌器全局把 border-style 留在 solid，不清宽度就会冒出 3px 浅灰白框 */
+  border-width: 0 !important;
+}
+
+.gi-card-viewer[data-shown] {
+  pointer-events: auto;
+  background: rgba(9, 13, 18, 0.62);
+}
+
+.gi-card-viewer:not([data-shown]) .gi-card-viewer-box {
+  display: none;
+}
+
+.gi-card-viewer-box {
+  position: relative;
+  display: flex;
+  height: 100%;
+  min-height: 0;
+}
+
+.gi-card-viewer-box > .gi-tcg-card-data-viewer {
+  width: auto;
+}
+
+/* 组牌器全局把 border-style 留在 solid：弹窗内没显式给宽度的元素要清掉，否则露出 3px 白框 */
+.gi-card-viewer :where(*) {
+  border-width: 0;
+}
+
+.gi-card-viewer-close {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.92);
+  color: #241f17;
+  font-size: 20px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* 卡池卡片右下角的放大镜：层级低于弹层(30)/抽屉(40)，只盖卡牌本体 */
+.card-zoom {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  z-index: 20;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.card-zoom img {
+  width: 72%;
+  height: 72%;
+  object-fit: contain;
+}
+
+/* 当前牌组里点卡片本体就能看详情，放大镜是重复的，把右下角让给移除按钮 */
+.gi-deck-char .card-zoom,
+.gi-deck-card .card-zoom {
+  display: none;
+}
+
+/* 窄屏：详情和规则解释两个面板并排会互相切掉，改成上下堆叠、整块滚动 */
+@media (max-width: 720px) {
+  .gi-card-viewer-box {
+    width: 100%;
+  }
+
+  .gi-card-viewer-box > .gi-tcg-card-data-viewer {
+    width: 100%;
+    flex-direction: column;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .gi-card-viewer-box > .gi-tcg-card-data-viewer > .card-panel {
+    flex: none;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .gi-card-viewer-close {
+    top: -6px;
+    right: -2px;
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "batch": 100,
+  "total": 0,
+  "mode": "learned",
+  "information": "fair",
+  "useSearch": true,
+  "searchBudgetMs": 300,
+  "seed": 20260101,
+  "seedFile": ""
+}

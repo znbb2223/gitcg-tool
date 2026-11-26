@@ -1,0 +1,12 @@
+import fs from "node:fs";
+const app=await import("/root/workspace/gi-tcg/packages/ai/dist/index.js");
+const {AssetsManager, LOCAL_ASSETS}=await import("@gi-tcg/assets-manager");
+const getData=(await import("@gi-tcg/data")).default; const {CURRENT_VERSION}=await import("@gi-tcg/core");
+const mgr=new AssetsManager({officialDeckCompatible:true, localAssets:LOCAL_ASSETS});
+const deckData=await mgr.getDeckData();
+const data=getData(CURRENT_VERSION);
+const lib=JSON.parse(fs.readFileSync("/root/workspace/gi-tcg/packages/standalone/public/data/deck-library.json","utf8"));
+const decks=lib.decks.filter(d=>d.chars?.length===3&&d.cards?.length===30).slice(0,2).map(d=>({characters:d.chars,cards:d.cards}));
+const t=Date.now();
+const r=await app.playFastGame(data,[decks[0],decks[1]],12345,{blunderRate:0.2,weights:{damage:1.1,kills:12,debuffs:0.8,created:0.45,healed:0.5,cardValue:0.7},style:"midrange"});
+console.log("weighted game ok:", r.winner, "rounds:", r.rounds, "ms:", Date.now()-t, "valid:", app.validateDeck(decks[0],deckData).valid);

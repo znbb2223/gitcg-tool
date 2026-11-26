@@ -1,0 +1,33 @@
+{
+  "name": "@gi-tcg/detail-log-viewer",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "build": "vite build"
+  },
+  "peerDependencies": {
+    "@solidjs/web": "catalog:",
+    "solid-js": "catalog:"
+  },
+  "dependencies": {
+    "@gi-tcg/assets-manager": "workspace:*"
+  },
+  "devDependencies": {
+    "@gi-tcg/core": "workspace:*",
+    "@gi-tcg/typings": "workspace:*",
+    "rollup-plugin-node-externals": "catalog:",
+    "unocss": "catalog:",
+    "vite": "catalog:",
+    "unplugin-dts": "catalog:",
+    "@solidjs/vite-plugin": "catalog:"
+  }
+}

@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <link rel="stylesheet" href="/responsive.css" />
+    <title>七圣召唤工具 · 卡组实验室</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background:#16120d; color:#e8e6e1; font-family: system-ui, sans-serif; padding: 18px; }
+      h1 { font-size: 20px; margin: 0 0 12px; }
+      label { display:block; font-size: 13px; color:#a89a80; margin: 10px 0 4px; }
+      textarea, select, input { width:100%; background:#241f17; border:1px solid #3d3527; color:#e8e6e1; border-radius:8px; padding:10px; font-size:14px; }
+      textarea { min-height: 70px; resize: vertical; }
+      .row { display:flex; gap:10px; }
+      .row > div { flex:1; }
+      button { margin-top:14px; width:100%; padding:14px; border:none; border-radius:10px; background:#c8a15a; color:#231a0d; font-size:16px; font-weight:700; }
+      button:disabled { opacity:.5; }
+      .btn-small { margin:0; padding:8px; font-size:12px; width:auto; flex:0 0 auto; }
+      #log { margin-top:14px; font-size:12px; color:#a89a80; white-space:pre-wrap; max-height:180px; overflow:auto; }
+      .card { margin-top:12px; background:#201b13; border:1px solid #2b251b; border-radius:10px; padding:12px; }
+      .card h3 { margin:0 0 6px; font-size:15px; color:#d9b877; }
+      .deck { font-family: ui-monospace, monospace; font-size:12px; word-break: break-all; color:#d5c9b0; }
+      .stat { font-size:12px; color:#a89a80; margin-top:6px; }
+      .bar { height:6px; background:#2b251b; border-radius:3px; margin-top:6px; overflow:hidden; }
+      .bar > i { display:block; height:100%; background:#c8a15a; width:0; }
+      #styleHint { color:#d9b877; font-weight:600; }
+      .chip { display:inline-block; font-size:11px; padding:2px 7px; border-radius:9px; background:#2b251b; color:#d5c9b0; margin-right:4px; }
+      .tag { display:inline-block; font-size:11px; padding:2px 7px; border-radius:9px; background:#26303a; color:#9fc0dd; margin-right:4px; }
+      .cache-row { border-top:1px solid #2b251b; padding-top:8px; margin-top:8px; }
+      .cache-actions { display:flex; gap:8px; margin-top:8px; }
+      .cache-actions button { margin:0; padding:8px; font-size:12px; flex:1; }
+      .empty { color:#6f767d; font-size:12px; padding:8px 0; }
+      #filters { display:flex; gap:8px; margin-bottom:10px; }
+      #filters button { margin:0; padding:8px; font-size:12px; }
+      .filter-grid { display:flex; gap:10px; }
+      .filter-grid > div { flex:1; }
+      #opLog { white-space:pre-wrap; max-height:220px; overflow:auto; margin-top:10px; }
+      #expOps { display:flex; flex-direction:column; gap:10px; }
+      #expOps button { margin:0; }
+      #toast {
+        position: fixed;
+        left: 50%;
+        bottom: 28px;
+        transform: translateX(-50%) translateY(6px);
+        max-width: min(78vw, 320px);
+        width: fit-content;
+        background: rgba(18, 26, 38, 0.94);
+        border: 1px solid rgba(227, 194, 126, 0.35);
+        color: #f2e6cc;
+        padding: 8px 14px;
+        border-radius: 999px;
+        font-size: 12px;
+        line-height: 1.4;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        z-index: 99;
+      }
+      #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+      #shareBtn { margin-top:12px; }
+    </style>
+  
+    <style id="app-feel">
+      /* 去掉浏览器痕迹：点击蓝色高亮、文本选中、长按菜单、滚动条 */
+      * { -webkit-tap-highlight-color: transparent !important; }
+      html, body { overscroll-behavior: none; }
+      body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+      button, a, select, input, textarea { -webkit-appearance: none; appearance: none; outline: none !important; }
+      ::selection { background: transparent; }
+      ::-webkit-scrollbar { width: 0; height: 0; }
+    </style>
+      <script>
+      // 跟随「主体方向」设置（模拟器对局除外），进页立即应用
+      setTimeout(() => {
+        if (localStorage.getItem("gitcg.mainOrientation") === "landscape") {
+          window.AndroidHost?.setOrientation?.("landscape");
+        }
+      }, 300);
+    </script>
+</head>
+  <body>
+    <script>
+      window.__STATIC_DATA_BASE__ = "/assets-local";
+      window.__UI_ASSET_BASE__ = "/assets-local/ui/";
+      window.__LOCAL_ASSETS__ = true;
+    </script>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
+      <h1 style="margin:0">七圣召唤工具 · 卡组实验室</h1>
+      <div style="display:flex;gap:8px;flex:0 0 auto">
+        <button id="openAiSettings" style="width:auto;margin:0;padding:8px 12px;font-size:12px;background:#3a3123;color:#ece5d8">AI 设置</button>
+        <button id="backHub" style="width:auto;margin:0;padding:8px 12px;font-size:12px;background:#3a3123;color:#ece5d8">工具首页</button>
+      </div>
+    </div>
+    <script>
+      document.getElementById("openAiSettings")?.addEventListener("click", () => {
+        location.href = "/ai-settings.html";
+      });
+    </script>
+    <div id="tabs" style="display:flex;gap:6px;margin-bottom:12px">
+      <button data-tab="search" style="flex:1;margin:0;padding:10px 4px;font-size:13px;background:#c8a15a;color:#231a0d">搜索</button>
+      <button data-tab="results" style="flex:1;margin:0;padding:10px 4px;font-size:13px;background:#3a3123;color:#ece5d8">结果</button>
+      <button data-tab="share" style="flex:1;margin:0;padding:10px 4px;font-size:13px;background:#3a3123;color:#ece5d8">牌组图</button>
+      <button data-tab="exp" style="flex:1;margin:0;padding:10px 4px;font-size:13px;background:#3a3123;color:#ece5d8">对局日志</button>
+    </div>
+
+    <div id="page-search">
+      <div class="card" style="margin-top:0" id="searchCard">
+        <label>对手牌组码</label>
+        <textarea id="deckCode" placeholder="粘贴分享码，例如 ArGR8RAQAQ..."></textarea>
+        <div class="row">
+          <div>
+            <label>搜索时长</label>
+            <select id="duration">
+              <option value="0">不限（直到停止）</option>
+              <option value="60">60 秒</option>
+              <option value="300" selected>5 分钟</option>
+              <option value="1800">30 分钟</option>
+              <option value="custom">自定义…</option>
+            </select>
+            <input id="customSeconds" type="number" min="10" placeholder="秒数" style="display:none;margin-top:6px" />
+          </div>
+          <div>
+            <label>搜索范围</label>
+            <div class="stat stylehint" id="styleHint">全流派（自动）</div>
+          </div>
+          <div>
+            <label>每副候选对局数</label>
+            <select id="gamesPerDeck">
+              <option value="2">2 局（快）</option>
+              <option value="4">4 局</option>
+              <option value="6" selected>6 局（默认）</option>
+              <option value="10">10 局</option>
+              <option value="20">20 局</option>
+              <option value="30">30 局（慢）</option>
+            </select>
+          </div>
+        </div>
+        <button id="start">开始超深搜索</button>
+        <button id="shareOnly" style="background:#7fb286">仅解析牌组码并生成牌组图</button>
+        <div class="stat" id="expStat"></div>
+        <div class="stat" id="cpu"></div>
+        <div id="log">等待开始…</div>
+      </div>
+    </div>
+
+    <div id="page-results" style="display:none">
+      <select id="style" style="display:none">
+        <option value="all" selected>全流派（自动）</option>
+      </select>
+
+      <div class="r-toolbar">
+        <input id="resultSearch" type="search" placeholder="搜角色 / 牌组码 / 标签" />
+        <select id="resultSort" title="排序">
+          <option value="default">排序：推荐</option>
+          <option value="rate">排序：击败率</option>
+          <option value="games">排序：样本量</option>
+          <option value="lib">排序：库胜率</option>
+        </select>
+        <button id="openResultFilter" type="button">筛选 <b id="resultFilterCount" hidden></b></button>
+      </div>
+      <div class="r-chips" id="resultChips" hidden></div>
+
+      <div class="r-sheet" id="resultSheet" aria-hidden="true">
+        <div class="r-sheet-inner">
+          <div class="r-sheet-head">
+            <b>筛选结果</b>
+            <span id="resultSheetHint">同类多选是「或」，不同类之间是「且」</span>
+            <button id="closeResultFilter" type="button">✕</button>
+          </div>
+          <div class="r-tabs" id="resultTabs"></div>
+          <div class="r-pane" id="resultPane"></div>
+          <div class="r-sheet-foot">
+            <button id="resetResultFilter" type="button">重置</button>
+            <button id="applyResultFilter" type="button">查看结果</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="filteredResults"></div>
+    </div>
+
+    <div id="page-exp" style="display:none">
+      <div class="card" style="margin-top:0">
+        <h3>对局日志</h3>
+        <div class="stat" id="expStat2"></div>
+        <div id="expOps" hidden>
+          <button id="exportExp" style="background:#5f7fa8">导出对局日志（7.2.0）</button>
+          <button id="importExp" style="background:#5f7fa8">导入并合并对局日志（自动去重）</button>
+        </div>
+        <div class="stat" id="opLog" hidden></div>
+      </div>
+
+      <div class="card">
+        <h3>缓存日志</h3>
+        <div class="stat">对局日志存放在应用缓存目录。点「播放回放」会交给七圣召唤模拟器重演；也可以导出到下载发给 AI。<br />
+导出的日志会存到：<b>下载/七圣召唤工具/对局日志/</b></div>
+        <div class="stat" id="cacheEmpty" hidden></div>
+        <div class="cache-actions">
+          <button id="refreshLogs" style="background:#3a3123;color:#ece5d8">刷新</button>
+          <button id="clearLogs" style="background:#8a4b43;color:#ffe9e5">清空缓存日志</button>
+        </div>
+        <div id="cacheList"></div>
+      </div>
+    </div>
+
+    <div id="page-detail" style="display:none">
+      <div class="card" style="margin-top:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <h3 style="margin:0">对局详情</h3>
+          <button id="detailBack" style="width:auto;margin:0;padding:8px 12px;font-size:12px;background:#3a3123;color:#ece5d8">返回结果</button>
+        </div>
+        <div class="stat" id="detailInfo"></div>
+      </div>
+      <div id="detailList"></div>
+    </div>
+
+    <div id="page-share" style="display:none">
+      <div class="card" style="margin-top:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <h3 style="margin:0">牌组图</h3>
+        </div>
+        <div class="stat" id="shareInfo">还没有生成。到「结果」页点「生成牌组图」，或在「搜索」页粘贴牌组码。</div>
+        <button id="shareBtn" style="background:#7fb286">保存牌组图</button>
+      </div>
+      <div id="sharePreview"></div>
+    </div>
+
+    <div id="results"></div>
+    <div id="toast"></div>
+    <script type="module" src="/src/lab.ts"></script>
+  </body>
+</html>
+<style>
+  /* 结果卡：向牌组库看齐（头像 + 胜率条 + 标签） */
+  .r-avatars { display: flex; gap: 8px; margin-bottom: 8px; }
+  .r-av { position: relative; width: 54px; text-align: center; }
+  .r-av img {
+    width: 54px; height: 54px; border-radius: 10px; object-fit: cover;
+    border: 1px solid rgba(227, 194, 126, 0.4); background: rgba(255, 255, 255, 0.05);
+  }
+  .r-av i {
+    display: block; margin-top: 3px; font-size: 10px; font-style: normal;
+    color: #bfcbd8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .r-head { display: flex; align-items: baseline; gap: 8px; }
+  .r-rank { font-size: 12px; color: #c8a15a; font-weight: 700; }
+  .r-rate { font-size: 18px; font-weight: 800; color: #f3e2bd; }
+  .r-rate.good { color: #8fd6a4; }
+  .r-rate.bad { color: #e08f8f; }
+  .r-games { font-size: 11px; color: #8fa0b3; }
+  .r-bar { margin-top: 6px; height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+  .r-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #c9a45f, #f3e2bd); }
+</style>
+<style>
+  /* 结果页筛选：牌组库同款 */
+  .r-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 10px; }
+  .r-toolbar input {
+    flex: 1 1 210px;
+    min-width: 150px;
+    width: auto;
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(227, 194, 126, 0.3);
+    background: rgba(10, 16, 24, 0.85);
+    color: #f4ecdd;
+    font: inherit;
+    font-size: 13px;
+  }
+  .r-toolbar select {
+    flex: 0 1 auto;
+    width: auto;
+    max-width: 108px;
+    min-width: 92px;
+    height: 38px;
+    padding: 0 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(227, 194, 126, 0.3);
+    background: rgba(10, 16, 24, 0.85);
+    color: #f0dcaa;
+    font: inherit;
+    font-size: 12.5px;
+  }
+  .r-toolbar button {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 88px;
+    height: 38px;
+    padding: 0 14px;
+    margin: 0;
+    border-radius: 10px;
+    border: 1px solid rgba(227, 194, 126, 0.45);
+    background: rgba(227, 194, 126, 0.12);
+    color: #f0dcaa;
+    font: inherit;
+    font-size: 13px;
+  }
+  .r-toolbar button b {
+    display: inline-block;
+    min-width: 16px;
+    margin-left: 4px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #c8a15a;
+    color: #231a0d;
+    font-size: 11px;
+  }
+  .r-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .r-chips button {
+    width: auto;
+    margin: 0;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(227, 194, 126, 0.35);
+    background: rgba(227, 194, 126, 0.12);
+    color: #eedfbf;
+    font-size: 11.5px;
+  }
+  .r-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: none;
+    align-items: flex-end;
+    background: rgba(4, 8, 14, 0.7);
+  }
+  .r-sheet.open { display: flex; }
+  .r-sheet-inner {
+    width: 100%;
+    max-height: 82vh;
+    overflow-y: auto;
+    border-radius: 16px 16px 0 0;
+    border: 1px solid rgba(227, 194, 126, 0.35);
+    background: linear-gradient(180deg, #16202f, #0b111a);
+    padding: 14px 14px 18px;
+  }
+  .r-sheet-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+  .r-sheet-head b { font-size: 15px; color: #f3e3c2; }
+  .r-sheet-head span { flex: 1; font-size: 10.5px; color: #8fa0b3; }
+  .r-sheet-head button {
+    width: 30px; height: 30px; margin: 0; border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: transparent; color: #cfd9e4;
+  }
+  .r-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; }
+  .r-tabs button {
+    flex: 0 0 auto; width: auto; margin: 0; padding: 7px 12px;
+    border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.05); color: #c8d3de; font-size: 12px; white-space: nowrap;
+  }
+  .r-tabs button.on {
+    border-color: #e3c27e; background: rgba(227, 194, 126, 0.2); color: #f8edd6; font-weight: 600;
+  }
+  .r-pane { display: flex; flex-direction: column; gap: 10px; }
+  .r-chipline { display: flex; flex-wrap: wrap; gap: 6px; }
+  .r-chipline button {
+    width: auto; margin: 0; padding: 6px 11px; border-radius: 999px;
+    border: 1px solid rgba(227, 194, 126, 0.3); background: rgba(255, 255, 255, 0.05);
+    color: #dfe7ef; font-size: 12px; white-space: nowrap;
+  }
+  .r-chipline button.on { border-color: #e3c27e; background: rgba(227, 194, 126, 0.22); color: #fff3d6; }
+  .r-chipline img { width: 22px; height: 22px; border-radius: 50%; vertical-align: -6px; margin-right: 5px; }
+  .r-sheet-foot { display: flex; gap: 10px; margin-top: 14px; }
+  .r-sheet-foot button {
+    flex: 1; height: 40px; margin: 0; border-radius: 10px; font-size: 13.5px; font-weight: 600;
+    border: 1px solid rgba(227, 194, 126, 0.4); background: rgba(255, 255, 255, 0.06); color: #e9dcc0;
+  }
+  .r-sheet-foot button#applyResultFilter {
+    background: linear-gradient(180deg, #ffeab8, #eccb8b 50%, #c9a45f); color: #33270f; border-color: #f2dfae;
+  }
+</style>
+<style>
+  .r-title { margin-top: 8px; font-size: 14px; font-weight: 600; color: #f6ecd8; line-height: 1.4; }
+  .r-title.r-new { color: #e3c27e; }
+  .r-meta { margin-top: 4px; font-size: 11.5px; color: #9fb0c2; line-height: 1.5; }
+  .card { cursor: pointer; }
+</style>
+<style>
+  /* 对局日志/缓存日志：隐藏的按钮与操作日志文本不要显示 */
+  #expOps[hidden], #opLog[hidden] { display: none !important; }
+  /* 刷新/清空缓存日志：放在提示文字下方、日志列表上方 */
+  .cache-actions {
+    margin: 6px 0 10px;
+  }
+</style>
+<style>
+  /* 「全流派（自动）」按搜索时长那种大号字段样式显示 */
+  .stylehint {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 6px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(227, 194, 126, 0.3);
+    background: rgba(10, 16, 24, 0.85);
+    color: #f4ecdd;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  /* 结果页工具条：搜索框占满剩余宽度，按钮紧凑 */
+  .r-toolbar select,
+  .r-toolbar button { font-size: 12.5px; padding: 0 10px; }
+</style>
+<style>
+  /* 结果页工具条：一行内放完，搜索框吃掉剩余宽度，两个按钮尽量短 */
+  .r-toolbar { flex-wrap: nowrap; }
+  .r-toolbar input { flex: 1 1 0 !important; min-width: 0 !important; }
+  .r-toolbar select { flex: 0 0 auto !important; max-width: none !important; min-width: 0 !important; padding: 0 8px !important; }
+  .r-toolbar button { flex: 0 0 auto !important; padding: 0 12px !important; }
+</style>
+<style>
+  /* 「全流派（自动）」与左边「5 分钟」下拉框同尺寸、同对齐 */
+  .stylehint {
+    display: block !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 10px !important;
+    border: 1px solid #3d3527 !important;
+    border-radius: 8px !important;
+    background: #241f17 !important;
+    color: #e8e6e1 !important;
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    line-height: normal !important;
+  }
+</style>
+<style>
+  /* 搜索页两列对齐：标签行高一致、两个框等高 38px */
+  #page-search .row { align-items: start; }
+  #page-search .row > div { display: flex; flex-direction: column; }
+  #page-search .row label { margin-bottom: 6px; line-height: 1.2; font-size: 13px; color: #d5c9b0; }
+  .stylehint {
+    display: flex !important;
+    align-items: center;
+    height: 38px;
+    padding: 0 10px !important;
+    margin: 0 !important;
+    box-sizing: border-box;
+    line-height: 1.2 !important;
+  }
+  #duration { height: 38px; padding: 0 10px; }
+</style>
+    <link rel="stylesheet" href="/genshin-ui.css" />
+

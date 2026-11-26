@@ -1,0 +1,42 @@
+// Copyright (C) 2026 Piovium Labs
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import { AssetFallback } from "./AssetFallback";
+import { createMemo } from "solid-js";
+import { useAssetsManager } from "./context";
+
+export const UI_ASSET_URL_BASE = (globalThis as { __UI_ASSET_BASE__?: string }).__UI_ASSET_BASE__ ??
+  "https://ui-assets.piovium.org/";
+
+export interface CardFaceProps {
+  defId: number;
+}
+
+export function CardFace(props: CardFaceProps) {
+  const { assetsManager } = useAssetsManager();
+  const image = createMemo(() => assetsManager().getImageUrl(props.defId));
+  const frameUrl = `${UI_ASSET_URL_BASE}CardFrameNormal.svg.webp`;
+  return (
+    <div class="grid children:grid-area-[1/1] card-face">
+      <AssetFallback
+        on={props.defId}
+        fallback={<div class="w-full h-full bg-black/50 rounded-[1em]" />}
+      >
+        <img src={image()} class="w-full h-full" />
+      </AssetFallback>
+      <img src={frameUrl} class="w-full h-full" />
+    </div>
+  );
+}

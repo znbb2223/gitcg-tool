@@ -1,0 +1,202 @@
+html, body, #root { height: 100%; margin: 0; }
+body { background: #16120d; color: #e8e6e1; font-family: system-ui, sans-serif; }
+.state-editor-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.state-editor-page > * {
+  flex: 1;
+  min-height: 0;
+}
+/* 顶栏按钮组：返回首页 + 重新随机 */
+.editor-tools { display: flex; gap: 8px; align-items: center; }
+.state-editor-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 13px;
+  color: #a89a80;
+}
+/* 返回首页按钮放在摆盘器顶栏的按钮组里 */
+.editor-back-button {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 236, 207, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ddd2bc;
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.editor-back-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* 摆盘完成后的对局设置面板 */
+.board-done {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(6, 10, 18, 0.72);
+  backdrop-filter: blur(6px);
+}
+.board-done__card {
+  width: min(420px, 100%);
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(226, 185, 108, 0.35);
+  background: linear-gradient(180deg, #2e281f, #16120d);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  color: #f4ecdd;
+}
+.board-done__card h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #f8ebd3;
+}
+.board-done__summary {
+  margin: 0 0 14px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #94866c;
+}
+.board-done__modes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.board-done__mode {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e9dfc9;
+  text-align: left;
+  cursor: pointer;
+}
+.board-done__mode b {
+  font-size: 13px;
+}
+.board-done__mode span {
+  font-size: 11px;
+  color: #8592a6;
+}
+.board-done__mode[data-active] {
+  border-color: rgba(107, 198, 195, 0.7);
+  background: rgba(107, 198, 195, 0.14);
+}
+.board-done__actions {
+  display: flex;
+  gap: 8px;
+}
+.board-done__actions button {
+  flex: 1;
+  padding: 10px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e9dfc9;
+  font-size: 13px;
+  cursor: pointer;
+}
+.board-done__actions button.primary {
+  border-color: rgba(107, 198, 195, 0.55);
+  background: linear-gradient(180deg, rgba(107, 198, 195, 0.4), rgba(107, 198, 195, 0.18));
+  color: #eafffd;
+  font-weight: 600;
+}
+
+@import url("/responsive.css");
+
+/* 摆盘器「正在编辑」改成牌组详情同款底部抽屉：浮在内容之上，收起只剩一条 */
+@media (orientation: portrait), (max-width: 900px) {
+  .gi-state-editor .gi-editor-main {
+    position: relative;
+    flex-direction: column;
+  }
+  .gi-state-editor .gi-editor-board {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding-bottom: 74px;
+  }
+  .gi-state-editor .gi-editor-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    width: auto;
+    height: 56px;
+    overflow: hidden;
+    max-height: 88vh;
+    border-left: 0;
+    border-top: 1px solid var(--gi-editor-border);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -14px 34px rgba(0, 0, 0, 0.5);
+    background: linear-gradient(180deg, rgba(22, 31, 45, 0.98), rgba(9, 14, 22, 0.99));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .gi-state-editor .gi-sheet-head {
+    min-height: 54px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .gi-state-editor .gi-editor-sheet[data-expanded] {
+    height: 86vh;
+  }
+  .gi-state-editor .gi-editor-sheet[data-expanded] .gi-sheet-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* 顶栏：标题一行；下面一条带框的按钮行（重新随机 / 导入快照 / 重置 / 完成） */
+.gi-editor-top {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.gi-editor-brand {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.gi-editor-actions {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid rgba(240, 214, 160, 0.22);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.editor-tools {
+  display: contents;
+}
+.editor-tools .editor-back-button,
+.gi-editor-actions > .gi-primary {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+  margin: 0;
+  min-height: 36px;
+  padding: 6px 4px;
+  font-size: 11.5px;
+  white-space: nowrap;
+  justify-content: center;
+}

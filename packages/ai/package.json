@@ -1,0 +1,37 @@
+{
+  "name": "@gi-tcg/ai",
+  "version": "0.21.0",
+  "description": "Built-in AI players (bots) for Genius Invokation TCG",
+  "type": "module",
+  "private": true,
+  "types": "./dist/index.d.ts",
+  "repository": {
+    "url": "https://github.com/piovium/genius-invokation",
+    "directory": "packages/ai"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "development": [
+        "./src/index.ts",
+        "./dist/index.js"
+      ],
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown"
+  },
+  "dependencies": {
+    "@gi-tcg/assets-manager": "workspace:*",
+    "@gi-tcg/core": "workspace:*",
+    "@gi-tcg/typings": "workspace:*"
+  },
+  "devDependencies": {
+    "@gi-tcg/core": "workspace:*",
+    "@gi-tcg/data": "workspace:*"
+  }
+}

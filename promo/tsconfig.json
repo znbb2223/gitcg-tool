@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": false,
+    "jsx": "react-jsx",
+    "jsxImportSource": "@motion-canvas/2d",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "types": ["@motion-canvas/vite-plugin/client"]
+  },
+  "include": ["**/*.ts", "**/*.tsx"]
+}

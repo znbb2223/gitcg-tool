@@ -1,0 +1,72 @@
+import {
+  ParentProps,
+  createContext,
+  createSignal,
+  useContext,
+} from "solid-js";
+import type { ProfileDetail } from "./profiles";
+import { AssetsManager, DEFAULT_VERSION } from "@gi-tcg/assets-manager";
+import { I18nDictionary } from "./locales";
+import { makePersisted } from "@solid-primitives/storage";
+import zhCN from "./locales/zh-CN";
+import en from "./locales/en";
+import {
+  resolveTemplate,
+  translator as createTranslator,
+  Translator as SolidTranslator,
+} from "@solid-primitives/i18n";
+
+export type Locale = "zh-CN" | "en";
+
+const translations = {
+  "zh-CN": zhCN,
+  en: en,
+};
+
+export type Translator = SolidTranslator<I18nDictionary>;
+
+interface I18nContextValue {
+  locale: () => Locale;
+  setLocale: (locale: Locale) => void;
+  assetsManager: (version?: string | ProfileDetail) => AssetsManager;
+  t: Translator;
+}
+
+const I18nContext = createContext<I18nContextValue>();
+
+export function I18nProvider(props: ParentProps) {
+  const [locale, setLocale] = makePersisted(createSignal<Locale>("zh-CN"), {
+    name: "locale",
+  });
+  const assetsManagerCache = new Map<string, AssetsManager>();
+
+  const assetsManager = (version: string | ProfileDetail = DEFAULT_VERSION) => {
+    const language = locale() === "zh-CN" ? "CHS" : "EN";
+    const cacheKey = `${language}-${typeof version === "string" ? version : version.profileHash}`;
+    if (assetsManagerCache.has(cacheKey)) {
+      return assetsManagerCache.get(cacheKey)!;
+    }
+    const manager = new AssetsManager({
+      language,
+      ...(typeof version === "string" ? { version } : version.assets),
+    });
+    assetsManagerCache.set(cacheKey, manager);
+    void manager.prepareForSync().catch(() => void 0);
+    return manager;
+  };
+
+  const t = createTranslator(() => translations[locale()], resolveTemplate);
+
+  const value: I18nContextValue = {
+    locale,
+    setLocale,
+    assetsManager,
+    t,
+  };
+
+  return <I18nContext value={value}>{props.children}</I18nContext>;
+}
+
+export function useI18n() {
+  return useContext(I18nContext)!;
+}

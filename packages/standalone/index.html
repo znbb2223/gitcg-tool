@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>七圣召唤模拟器</title>
+  </head>
+  <body>
+    <script>
+      // 启动诊断：只在"JS 崩了/启动超时"时提示，图片 404 不再刷屏
+      (function () {
+        var shown = false;
+        function show(msg) {
+          if (shown) { return; }
+          shown = true;
+          var el = document.createElement("div");
+          el.style.cssText = "position:fixed;left:0;right:0;bottom:0;background:#300;color:#fff;font:12px/1.5 monospace;padding:8px;z-index:99999;white-space:pre-wrap;max-height:30vh;overflow:auto;";
+          el.textContent = "启动失败：" + msg;
+          document.documentElement.appendChild(el);
+        }
+        window.addEventListener("error", function (e) {
+          var t = e.target;
+          if (t && t.tagName) { return; } // 资源加载失败不提示
+          show((e.message || e.type) + " @" + (e.filename || "").slice(-40) + ":" + (e.lineno || 0));
+        }, true);
+        window.addEventListener("unhandledrejection", function (e) {
+          show((e.reason && e.reason.message) || String(e.reason));
+        });
+        setTimeout(function () {
+          var root = document.getElementById("root");
+          if (root && root.textContent.trim() === "App loading...") {
+            show("启动超时 · UA=" + navigator.userAgent.slice(0, 90));
+          }
+        }, 8000);
+      })();
+    </script>
+    <script>
+      // 打包版：图片与数据走随包目录（public/assets-local），不访问外网
+      window.__STATIC_DATA_BASE__ = "/assets-local";
+      window.__UI_ASSET_BASE__ = "/assets-local/ui/";
+      window.__LOCAL_ASSETS__ = true;
+      window.__WIDE_BOARD__ = true;
+    </script>
+    <div id="root">App loading...</div>
+    <script type="module" src="/src/index.tsx"></script>
+  </body>
+</html>

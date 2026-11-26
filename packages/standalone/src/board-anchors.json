@@ -1,0 +1,11 @@
+{
+  "_comment": "20:9 设计基准 916x412 下录制的锚点：位置=相对舞台十字中心的 dx/dy（设计像素），尺寸=设计像素。用 ?dumpLayout=1 录制，可继续补全。",
+  "design": { "width": 916, "height": 412 },
+  "center": { "x": 458, "y": 206 },
+  "elements": {
+    "boardRoot": { "dx": 0, "dy": -21, "w": 916, "h": 371 },
+    "myCharacterSlotRight": { "dx": 101, "dy": 90, "w": 79, "h": 180 },
+    "myCharacterSlotMiddle": { "dx": 0, "dy": 90, "w": 79, "h": 180 },
+    "opponentCharacterSlotLeft": { "dx": -403, "dy": 105, "w": 108, "h": 63 }
+  }
+}

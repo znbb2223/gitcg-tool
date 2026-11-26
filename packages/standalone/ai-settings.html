@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport"
+      <link rel="stylesheet" href="/genshin-ui.css" /> content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>AI 设置 · 七圣召唤工具</title>
+  </head>
+  <body>
+        <script>
+      // 跟随「主体方向」设置（模拟器对局除外），进页立即应用
+      setTimeout(() => {
+        if (localStorage.getItem("gitcg.mainOrientation") === "landscape") {
+          window.AndroidHost?.setOrientation?.("landscape");
+        }
+      }, 300);
+    </script>
+<div id="root"></div>
+    <script type="module" src="/src/ai-settings.tsx"></script>
+  </body>
+</html>

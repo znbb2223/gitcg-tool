@@ -1,0 +1,9 @@
+
+/* 屏幕比例适配：矮屏压缩工具栏与卡池留白 */
+@media (max-height: 720px) {
+  .deckbuilder-bar { padding: 6px 10px; }
+  .deckbuilder-bar__actions button { min-height: 38px; font-size: 12px; }
+}
+@media (max-width: 360px) {
+  .deckbuilder-bar__actions { gap: 4px; }
+}
