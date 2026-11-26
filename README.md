@@ -57,6 +57,11 @@ node trainer.mjs        # 交互式设置批次/线程数后开跑
 每批打完合并经验到 `learning.json`，导出 `gitcg-trained-ai-*.json` 可在工具内
 「设置 → 导入 AI 数据」回灌手机端。
 
+## 素材与数据
+
+美术素材（卡面、图标、界面图）与社区牌组数据**不入库**，抓取方式与产物路径见
+[docs/ASSETS.zh.md](./docs/ASSETS.zh.md)。素材版权归 miHoYo / HoYoverse，仅限本地使用。
+
 ## 说明
 
 - 本工具不含任何联网功能，资源全部内置；
