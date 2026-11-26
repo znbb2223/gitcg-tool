@@ -25,6 +25,7 @@
 | [TRAINER.zh.md](./TRAINER.zh.md) | 训练器设计、菜单、经验导出与回灌 |
 | [ASSETS.zh.md](./ASSETS.zh.md) | 卡面 / 数据 / 牌组库抓取 |
 | [AI.zh.md](./AI.zh.md) | AI 原理 / 强度 / 旋钮 / 局限 |
+| [AI-ROADMAP.zh.md](./AI-ROADMAP.zh.md) | 14 个 AI 组件路线图与门槛 |
 | [KNOWN-ISSUES.zh.md](./KNOWN-ISSUES.zh.md) | 已知问题与限制 |
 | [ROADMAP.zh.md](./ROADMAP.zh.md) | 路线图 |
 | [development/](./development/README.md) | 上游维护者的数据与查询引擎文档 |

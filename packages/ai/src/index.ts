@@ -88,6 +88,7 @@ export {
   type MemoryEntry,
 } from "./memory";
 export { DECK_LIBRARY, type LibraryDeck } from "./data/deck-library";
+export { VALUE_NN } from "./data/value-nn";
 export { EXPERIENCE_SEED } from "./data/experience-seed";
 
 /** 牌组指纹：角色和卡牌各排序后拼接，和牌组库/训练分片用的是同一套 key */
@@ -96,3 +97,25 @@ export function deckKeyOf(deck: { characters: readonly number[]; cards: readonly
     .sort((a, b) => a - b)
     .join(",")}`;
 }
+export {
+  configureValue,
+  createFeatureTable,
+  featureKey,
+  getValueOptions,
+  handcraftedValueV1,
+  handcraftedValueV2,
+  mergeFeatureTables,
+  nnValue,
+  recordBucket,
+  stateFeatures,
+  tableValue,
+  valueOf,
+  FEATURE_ORDER,
+  type FeatureBucket,
+  type FeatureName,
+  type FeatureTable,
+  type FeatureVector,
+  type NnLayer,
+  type NnWeights,
+  type ValueOptions,
+} from "./value";

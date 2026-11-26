@@ -35,6 +35,10 @@ export interface SearchInput {
   heuristicScores?: Record<number, number>;
   /** 明牌模式：AI 直接读取隐藏信息 */
   perfectInformation?: boolean;
+  /** 局面价值算法：v1 旧线性 / v2 手工特征（默认） */
+  valueMode?: "v1" | "v2";
+  /** 是否启用神经网络价值函数 */
+  nnEnabled?: boolean;
 }
 
 /** 搜索 worker 的简单请求/响应封装 */

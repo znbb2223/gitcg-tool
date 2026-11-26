@@ -285,6 +285,10 @@ export interface AiWeights {
   cardPrior: number;
   /** 角色胜率先验的权重（换人、选谁出战） */
   charPrior: number;
+  /** 骰子经济：己方骰子比对方多时更激进（每多 1 个骰子的加成） */
+  diceEcon: number;
+  /** 场面差：场面落后时，铺召唤物/支援更值钱（每落后 1 个单位的加成） */
+  boardPressure: number;
 }
 
 export const DEFAULT_AI_WEIGHTS: AiWeights = {
@@ -300,6 +304,8 @@ export const DEFAULT_AI_WEIGHTS: AiWeights = {
   piercing: 0.3,
   cardPrior: 0.6,
   charPrior: 0.4,
+  diceEcon: 0.05,
+  boardPressure: 0.12,
 };
 
 export interface ScoreContext {
@@ -361,6 +367,25 @@ export function scoreAction(
   const cardPressure = (me?.handCard.length ?? 0) <= 2 ? -0.35 : 0;
   /** 快速行动不交节奏 */
   const speedBonus = action.isFast ? 0.25 : 0;
+  /**
+   * 骰子经济：己方骰子比对方多时，进攻更划算（对面没资源反击）；
+   * 少于对方时保守一点，避免把骰子浪费在收益不确定的动作上。
+   */
+  const diceGap =
+    (me?.dice.length ?? 0) - (enemy?.dice.length ?? 0);
+  const diceEcon =
+    1 + Math.max(-0.15, Math.min(0.25, diceGap * weights.diceEcon));
+  /**
+   * 场面差：对面召唤物/支援更多时，自己铺场的边际价值更高（追平场面）；
+   * 自己场面领先时，铺场收益递减，不如直接打伤害。
+   */
+  // 注意：预览局面里字段名是 summon/support（单数），不是 summons/supports
+  const boardGap =
+    (enemy?.summon?.length ?? 0) +
+    (enemy?.support?.length ?? 0) -
+    ((me?.summon?.length ?? 0) + (me?.support?.length ?? 0));
+  const boardPressure =
+    1 + Math.max(-0.2, Math.min(0.45, boardGap * weights.boardPressure));
   // 按牌组风格调权重：快攻抢血、控制苟活、中速均衡
   const style = ctx.style ?? "midrange";
   const styleDamage = style === "aggro" ? 1.15 : style === "control" ? 0.9 : 1;
@@ -419,12 +444,12 @@ export function scoreAction(
             : -0.6 + summary.damage * 0.2 - cost * 0.05;
         }
         const damageScore =
-          summary.damage * weights.damage * raceFactor * caution * styleDamage +
+          summary.damage * weights.damage * raceFactor * caution * styleDamage * diceEcon +
           summary.kills * weights.kills +
           summary.reactions * 1.6 +
           pressureBonus +
           summary.debuffs * (weights.debuffs / 0.4) * 0.4 * styleDebuff +
-          summary.created * (weights.created / 0.45) * 0.3 +
+          summary.created * (weights.created / 0.45) * 0.3 * boardPressure +
           (myActive
             ? Math.min(
                 summary.healed,
@@ -456,7 +481,7 @@ export function scoreAction(
           summary.damage * (weights.damage / 1.1) * raceFactor * caution * styleDamage +
           summary.kills * weights.kills +
           summary.debuffs * (weights.debuffs / 0.4) * 0.4 * styleDebuff +
-          summary.created * (weights.created / 0.45) * 0.45 +
+          summary.created * (weights.created / 0.45) * 0.45 * boardPressure +
           summary.healed * (weights.healed / 0.5) * 0.5 * styleHeal +
           shieldScore +
           // 经验库先验：历史胜率高的牌，同等条件下优先

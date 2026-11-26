@@ -29,6 +29,7 @@ import {
   memoryKey,
   ponderPosition,
   searchBestAction,
+  VALUE_NN,
   type DecisionMemoryData,
 } from "@gi-tcg/ai";
 
@@ -43,6 +44,8 @@ interface SearchMessage {
   request: ActionRequest;
   heuristicScores?: Record<number, number>;
   perfectInformation?: boolean;
+  valueMode?: "v1" | "v2";
+  nnEnabled?: boolean;
   /** 只在第一次请求时传，之后 worker 自己记着 */
   memory?: DecisionMemoryData;
 }
@@ -78,6 +81,11 @@ ctx.onmessage = async (
         state,
         who: message.who,
         budgetMs: message.budgetMs,
+        valueOptions: {
+          mode: message.valueMode ?? "v2",
+          nn: message.nnEnabled ? VALUE_NN : null,
+          nnWeight: 0.45,
+        },
         maxActions: 16,
         perfectInformation: message.perfectInformation,
       });

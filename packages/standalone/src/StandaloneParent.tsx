@@ -61,6 +61,14 @@ import mergeErrorCause from "merge-error-cause";
 
 export type LocalPlayMode = "pvp" | "ai" | "aiai";
 
+
+/** 局面价值算法：'v1' 旧线性 / 'v2' 手工特征（默认） */
+const aiValueMode = (): "v1" | "v2" =>
+  localStorage.getItem("gitcg.ai.valueMode") === "v1" ? "v1" : "v2";
+
+/** 是否启用神经网络价值函数（默认关闭，A/B 达标后再打开） */
+const aiNnEnabled = () => localStorage.getItem("gitcg.ai.nn") === "1";
+
 export interface StandaloneParentProps {
   logs?: GameStateLogEntry[];
   importedDetailLog?: readonly DetailLogEntry[];
@@ -613,6 +621,8 @@ export function StandaloneParent(props: StandaloneParentProps) {
               version: props.version,
               who,
               budgetMs: props.aiThinkBudgetMs ?? 8000,
+              valueMode: aiValueMode(),
+              nnEnabled: aiNnEnabled(),
               stateLog: JSON.stringify(
                 serializeGameStateLog([{ state: game.state, canResume: true }]),
               ),
@@ -819,6 +829,8 @@ export function StandaloneParent(props: StandaloneParentProps) {
               version: props.version,
               who,
               budgetMs: 2500,
+              valueMode: aiValueMode(),
+              nnEnabled: aiNnEnabled(),
               perfectInformation: props.aiPerfectInfo,
               stateLog: JSON.stringify(
                 serializeGameStateLog([{ state: game.state, canResume: true }]),

@@ -41,6 +41,7 @@ import {
 import type { GameData } from "@gi-tcg/core/data";
 import { costWeight } from "./evaluate";
 import { memoryKey, type DecisionMemory } from "./memory";
+import { valueOf, type ValueOptions } from "./value";
 
 export interface SearchCandidateStat {
   index: number;
@@ -80,6 +81,8 @@ export interface SearchOptions {
   perfectInformation?: boolean;
   /** 启发式先验分（index → score），用于融合排序与剪枝 */
   heuristicScores?: Map<number, number>;
+  /** 局面价值配置：查表 / 神经网络 / 旧版线性的开关 */
+  valueOptions?: ValueOptions;
   log?: (message: string) => void;
 }
 
@@ -374,27 +377,14 @@ export function fastReply(
   }
 }
 
-/** 谁更占优：血量、存活角色、场面、手牌、骰子，返回 [-1, 1] */
+/**
+ * 谁更占优，返回 [-1, 1]。
+ *
+ * 具体算法在 `value.ts`：手工特征（默认）→ 可选叠加历史胜率查表 → 可选叠加小神经网络，
+ * 三层都能单独开关，用 `configureValue` 配置。
+ */
 export function evaluateState(state: GameState, who: 0 | 1): number {
-  const value = (playerIndex: 0 | 1) => {
-    const player = state.players[playerIndex];
-    const health = player.characters.reduce(
-      (sum, character) => sum + Math.max(character.variables.health, 0),
-      0,
-    );
-    const alive = player.characters.filter(
-      (character) => character.variables.health > 0,
-    ).length;
-    return (
-      health +
-      alive * 3 +
-      player.summons.length * 0.5 +
-      player.supports.length * 0.5 +
-      player.hands.length * 0.3 +
-      player.dice.length * 0.2
-    );
-  };
-  return Math.tanh((value(who) - value(1 - who)) / 12);
+  return valueOf(state, who);
 }
 
 /**
@@ -568,7 +558,7 @@ export async function searchBestAction(
     });
 
     const score = cutShort
-      ? evaluateState(game.state, who)
+      ? valueOf(game.state, who, options.valueOptions)
       : winner === who
         ? 1
         : winner === null
