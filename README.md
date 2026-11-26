@@ -67,7 +67,27 @@
 - 导出的 `gitcg-trained-ai-*.json` 可在工具里「设置 → 导入 AI 数据」回灌手机；
 - 详见 [docs/TRAINER.zh.md](./docs/TRAINER.zh.md)。
 
-## 三、目录结构
+## 三、整体结构
+
+```mermaid
+flowchart LR
+  subgraph 手机端 APK
+    W[WebView] --> H[hub 首页]
+    H --> G[模拟器 app.html]
+    H --> L[牌组库]
+    H --> B[组牌器]
+    H --> S[摆盘器]
+    H --> A[关于]
+  end
+  G --> C[core 引擎]
+  G --> AI[ai 搜索]
+  L --> D[(deck-library.json)]
+  AI --> E[(经验库)]
+  S --> C
+  T[电脑训练器] -->|导入经验包| E
+```
+
+## 四、目录结构
 
 ```
 packages/                  pnpm monorepo
@@ -87,7 +107,7 @@ promo/                     宣传片工程（Motion Canvas）
 docs/                      文档
 ```
 
-## 四、快速开始
+## 五、快速开始
 
 ### 网页版（开发调试）
 
@@ -118,7 +138,7 @@ cd android && ./build.sh     # 需要 android-sdk、d8、apksigner
 美术素材与社区牌组数据不入库（版权与体积原因），抓取方式见
 [docs/ASSETS.zh.md](./docs/ASSETS.zh.md)。
 
-## 五、文档
+## 六、文档
 
 | 文档 | 内容 |
 |---|---|
@@ -128,8 +148,15 @@ cd android && ./build.sh     # 需要 android-sdk、d8、apksigner
 | [docs/PITFALLS.zh.md](./docs/PITFALLS.zh.md) | 踩坑清单：现象 / 根因 / 解法 |
 | [docs/TRAINER.zh.md](./docs/TRAINER.zh.md) | 训练器设计、参数、经验导出与回灌 |
 | [docs/ASSETS.zh.md](./docs/ASSETS.zh.md) | 卡面 / 数据 / 牌组库抓取说明 |
+| [docs/DATA.zh.md](./docs/DATA.zh.md) | 牌组码编码、牌组库条目、AI 经验包、缓存键 |
+| [docs/UI.zh.md](./docs/UI.zh.md) | 设计 token、比例规则、对局布局约束、排版层级 |
+| [docs/TESTING.zh.md](./docs/TESTING.zh.md) | 截图 / DOM 尺寸 / 像素采样 / AI 自对弈验收法 |
+| [docs/ROADMAP.zh.md](./docs/ROADMAP.zh.md) | 路线图 |
+| [CHANGELOG.md](./CHANGELOG.md) | 版本更新日志 |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | 贡献指南 |
+| [SECURITY.md](./SECURITY.md) | 隐私与权限声明 |
 
-## 六、FAQ
+## 七、FAQ
 
 **Q：为什么不直接发完整源码包（含素材）？**
 素材版权归米哈游，仓库只放代码与抓取脚本，自己构建时按文档拉取即可。
@@ -145,13 +172,13 @@ cd android && ./build.sh     # 需要 android-sdk、d8、apksigner
 **Q：能在电脑上用吗？**
 可以，用网页版（`pnpm --filter @gi-tcg/standalone dev`）或构建后本地起服务。
 
-## 七、致谢
+## 八、致谢
 
 - 规则引擎与卡牌数据：[piovium/genius-invokation](https://github.com/piovium/genius-invokation) 及其贡献者；
 - 卡牌美术、图标、界面素材：miHoYo / HoYoverse；
 - 社区牌组：牌组广场与米游社的各位作者。
 
-## 八、许可
+## 九、许可
 
 代码以 **AGPL-3.0** 分发，见 [LICENSE](./LICENSE)。
 修改后再分发（包括以服务形式提供）时，请保留同样许可并公开源码。
