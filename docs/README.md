@@ -7,6 +7,9 @@
 | [../README.md](../README.md) | 项目介绍、功能、快速开始、FAQ |
 | [../CHANGELOG.md](../CHANGELOG.md) | 版本更新日志 |
 | [../SECURITY.md](../SECURITY.md) | 零权限 / 不联网 / 数据存哪 |
+| [USER-GUIDE.zh.md](./USER-GUIDE.zh.md) | 带图新手指南 |
+| [INSTALL.zh.md](./INSTALL.zh.md) | 安装与系统要求 |
+| [GLOSSARY.zh.md](./GLOSSARY.zh.md) | 术语表 |
 
 ## 给开发者
 
@@ -21,6 +24,8 @@
 | [UI.zh.md](./UI.zh.md) | 设计 token、比例规则、对局布局约束、排版 |
 | [TRAINER.zh.md](./TRAINER.zh.md) | 训练器设计、菜单、经验导出与回灌 |
 | [ASSETS.zh.md](./ASSETS.zh.md) | 卡面 / 数据 / 牌组库抓取 |
+| [AI.zh.md](./AI.zh.md) | AI 原理 / 强度 / 旋钮 / 局限 |
+| [KNOWN-ISSUES.zh.md](./KNOWN-ISSUES.zh.md) | 已知问题与限制 |
 | [ROADMAP.zh.md](./ROADMAP.zh.md) | 路线图 |
 | [development/](./development/README.md) | 上游维护者的数据与查询引擎文档 |
 

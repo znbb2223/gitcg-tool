@@ -67,7 +67,29 @@
 - 导出的 `gitcg-trained-ai-*.json` 可在工具里「设置 → 导入 AI 数据」回灌手机；
 - 详见 [docs/TRAINER.zh.md](./docs/TRAINER.zh.md)。
 
-## 三、整体结构
+## 三、界面预览
+
+<table>
+<tr>
+<td align="center"><img src="./docs/screenshots/01-hub-portrait-20x9.png" width="150"><br/><sub>首页（20:9 竖屏）</sub></td>
+<td align="center"><img src="./docs/screenshots/02-deck-library-portrait-20x9.png" width="150"><br/><sub>牌组库</sub></td>
+<td align="center"><img src="./docs/screenshots/03-deck-builder-portrait-20x9.png" width="150"><br/><sub>组牌器</sub></td>
+<td align="center"><img src="./docs/screenshots/04-lab-portrait-20x9.png" width="150"><br/><sub>卡组实验室</sub></td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td align="center" width="50%"><img src="./docs/screenshots/07-simulator-landscape-20x9.png" width="380"><br/><sub>对局模拟器（20:9 横屏）</sub></td>
+<td align="center" width="50%"><img src="./docs/screenshots/05-state-editor-landscape-20x9.png" width="380"><br/><sub>摆盘器（20:9 横屏）</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="./docs/screenshots/05-state-editor-portrait-20x9.png" width="150"><br/><sub>摆盘器（竖屏）</sub></td>
+<td align="center"><img src="./docs/screenshots/06-about-portrait-20x9.png" width="150"><br/><sub>关于页</sub></td>
+</tr>
+</table>
+
+## 四、整体结构
 
 ```mermaid
 flowchart LR
@@ -87,7 +109,7 @@ flowchart LR
   T[电脑训练器] -->|导入经验包| E
 ```
 
-## 四、目录结构
+## 五、目录结构
 
 ```
 packages/                  pnpm monorepo
@@ -107,7 +129,7 @@ promo/                     宣传片工程（Motion Canvas）
 docs/                      文档
 ```
 
-## 五、快速开始
+## 六、快速开始
 
 ### 网页版（开发调试）
 
@@ -138,7 +160,7 @@ cd android && ./build.sh     # 需要 android-sdk、d8、apksigner
 美术素材与社区牌组数据不入库（版权与体积原因），抓取方式见
 [docs/ASSETS.zh.md](./docs/ASSETS.zh.md)。
 
-## 六、文档
+## 七、文档
 
 | 文档 | 内容 |
 |---|---|
@@ -152,11 +174,16 @@ cd android && ./build.sh     # 需要 android-sdk、d8、apksigner
 | [docs/UI.zh.md](./docs/UI.zh.md) | 设计 token、比例规则、对局布局约束、排版层级 |
 | [docs/TESTING.zh.md](./docs/TESTING.zh.md) | 截图 / DOM 尺寸 / 像素采样 / AI 自对弈验收法 |
 | [docs/ROADMAP.zh.md](./docs/ROADMAP.zh.md) | 路线图 |
+| [docs/USER-GUIDE.zh.md](./docs/USER-GUIDE.zh.md) | 带图新手指南：从首页到打一局 |
+| [docs/INSTALL.zh.md](./docs/INSTALL.zh.md) | 安装、系统要求、卸载与重置 |
+| [docs/GLOSSARY.zh.md](./docs/GLOSSARY.zh.md) | 术语表（对局 / 工具 / AI） |
+| [docs/AI.zh.md](./docs/AI.zh.md) | **AI 原理、强度定位、强度旋钮、局限** |
+| [docs/KNOWN-ISSUES.zh.md](./docs/KNOWN-ISSUES.zh.md) | **已知问题与限制、规避方式** |
 | [CHANGELOG.md](./CHANGELOG.md) | 版本更新日志 |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | 贡献指南 |
 | [SECURITY.md](./SECURITY.md) | 隐私与权限声明 |
 
-## 七、FAQ
+## 八、FAQ
 
 **Q：为什么不直接发完整源码包（含素材）？**
 素材版权归米哈游，仓库只放代码与抓取脚本，自己构建时按文档拉取即可。
@@ -169,16 +196,20 @@ cd android && ./build.sh     # 需要 android-sdk、d8、apksigner
 诚实定位：不比熟练玩家强，靠搜索预算和经验库堆出来的稳定度；
 胜率数据来自自我对弈，不含人类对局。
 
+**Q：AI 到底什么水平？**
+比随便打强，不如熟练玩家；原理、强度旋钮和局限都写在
+[docs/AI.zh.md](./docs/AI.zh.md)，已知问题见 [docs/KNOWN-ISSUES.zh.md](./docs/KNOWN-ISSUES.zh.md)。
+
 **Q：能在电脑上用吗？**
 可以，用网页版（`pnpm --filter @gi-tcg/standalone dev`）或构建后本地起服务。
 
-## 八、致谢
+## 九、致谢
 
 - 规则引擎与卡牌数据：[piovium/genius-invokation](https://github.com/piovium/genius-invokation) 及其贡献者；
 - 卡牌美术、图标、界面素材：miHoYo / HoYoverse；
 - 社区牌组：牌组广场与米游社的各位作者。
 
-## 九、许可
+## 十、许可
 
 代码以 **AGPL-3.0** 分发，见 [LICENSE](./LICENSE)。
 修改后再分发（包括以服务形式提供）时，请保留同样许可并公开源码。
