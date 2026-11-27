@@ -1073,7 +1073,138 @@ usage() {
     '  deckcode.sh batch <文件>                       每行一组：牌组码或 33 个名字/ID'
 }
 
+# ============ 交互菜单 ============
+declare -a CUR=()
+init_cur() { CUR=(); local i; for ((i=0;i<33;i++)); do CUR[i]=""; done; }
+cur_filled() { local n=0 v; for v in "${CUR[@]}"; do [ -n "$v" ] && n=$((n+1)); done; echo "$n"; }
+
+show_cur() {
+  local i kind
+  if [ "$(cur_filled)" -eq 0 ]; then echo "（当前牌组为空）"; return; fi
+  for ((i=0;i<33;i++)); do
+    kind=$([ $i -lt 3 ] && echo 角色 || echo 行动牌)
+    if [ -n "${CUR[i]}" ]; then
+      printf '%2d. [%s] %s (%s)\n' "$((i+1))" "$kind" "${NAME[${CUR[i]}]:-<未知>}" "${CUR[i]}"
+    else
+      printf '%2d. [%s] （空）\n' "$((i+1))" "$kind"
+    fi
+  done
+}
+
+print_cur_code() {
+  local -a ids=()
+  [ "$(cur_filled)" -eq 33 ] || { echo "还差 $((33 - $(cur_filled))) 个槽位，先补满再输出"; return; }
+  local i; for ((i=0;i<33;i++)); do ids+=("${CUR[i]}"); done
+  echo "牌组码: $(encode_deck "${ids[@]}")"
+}
+
+prompt() { local __v; read -r -p "$1" __v || return 1; printf '%s' "$__v"; }
+
+editor_menu() {
+  while true; do
+    echo
+    echo "--- 编辑牌组（已填 $(cur_filled)/33）---"
+    echo "1) 查看当前槽位   2) 设置某个槽位   3) 填充 30 张行动牌"
+    echo "4) 30 张同卡      5) 3 个同角色     6) 输出牌组码"
+    echo "7) 清空重来       8) 解码粘贴       0) 返回主菜单"
+    local c; c=$(prompt "选择: ") || return
+    case "$c" in
+      1) show_cur ;;
+      2) local idx tok; idx=$(prompt "槽位 1-33: ") || continue
+         if ! [[ "$idx" =~ ^[0-9]+$ ]] || [ "$idx" -lt 1 ] || [ "$idx" -gt 33 ]; then echo "槽位要在 1~33"; continue; fi
+         tok=$(prompt "名字或 ID: ") || continue
+         if id=$(resolve "$tok" 2>/dev/null); then CUR[$((idx-1))]="$id"; echo "已设置：${NAME[$id]} ($id)"; else resolve "$tok"; fi ;;
+      3) local line; line=$(prompt "30 个行动牌（空格/逗号分隔）: ") || continue
+         local -a toks=(); local t
+         for t in ${line//,/ }; do toks+=("$t"); done
+         if [ "${#toks[@]}" -ne 30 ]; then echo "需要 30 个，现在 ${#toks[@]} 个"; continue; fi
+         local i=0; for t in "${toks[@]}"; do if id=$(resolve "$t" 2>/dev/null); then CUR[$((3+i))]="$id"; else echo "第 $((i+1)) 个失败: $(resolve "$t" 2>&1)"; i=-1; break; fi; i=$((i+1)); done
+         [ $i -eq 30 ] && echo "已填充 30 张行动牌" ;;
+      4) local card c1 c2 c3
+         card=$(prompt "行动牌: ") || continue; c1=$(prompt "角色1: ") || continue
+         c2=$(prompt "角色2: ") || continue; c3=$(prompt "角色3: ") || continue
+         local a b cc d; a=$(resolve "$card" 2>/dev/null) && b=$(resolve "$c1" 2>/dev/null) && cc=$(resolve "$c2" 2>/dev/null) && d=$(resolve "$c3" 2>/dev/null) || { resolve "$card"; resolve "$c1"; resolve "$c2"; resolve "$c3"; continue; }
+         CUR[0]=$b; CUR[1]=$cc; CUR[2]=$d; local i=0; for ((i=3;i<33;i++)); do CUR[i]=$a; done
+         echo "已生成：3 角色 + 30 张同卡" ;;
+      5) local ch cd; ch=$(prompt "角色: ") || continue; cd=$(prompt "行动牌: ") || continue
+         local a b; a=$(resolve "$ch" 2>/dev/null) && b=$(resolve "$cd" 2>/dev/null) || { resolve "$ch"; resolve "$cd"; continue; }
+         local i=0; for ((i=0;i<3;i++)); do CUR[i]=$a; done
+         for ((i=3;i<33;i++)); do CUR[i]=$b; done
+         echo "已生成：3 个同角色 + 30 张同卡" ;;
+      6) print_cur_code ;;
+      7) init_cur; echo "已清空" ;;
+      8) local code; code=$(prompt "牌组码: ") || continue
+         if ids=($(decode_deck "$code" 2>/dev/null)); then local i; for ((i=0;i<33;i++)); do CUR[i]="${ids[i]}"; done; echo "已载入"; show_cur; else decode_deck "$code"; fi ;;
+      0) return ;;
+      *) echo "无效选择" ;;
+    esac
+  done
+}
+
+interactive() {
+  init_cur
+  while true; do
+    echo
+    echo "=== 七圣召唤 · 牌组码工具 ===（当前牌组已填 $(cur_filled)/33）"
+    echo "1) 解码牌组码"
+    echo "2) 编辑 / 编码牌组（逐槽自由编辑）"
+    echo "3) 查询名字 / ID 对照表"
+    echo "4) 30 张同卡（快捷）"
+    echo "5) 3 个同角色（快捷）"
+    echo "6) 自由填充 30 张行动牌"
+    echo "7) 批量处理文件"
+    echo "0) 退出"
+    local c; c=$(prompt "请选择: ") || break
+    case "$c" in
+      1) local code; code=$(prompt "粘贴牌组码: ") || continue
+         if ids=($(decode_deck "$code" 2>/dev/null)); then echo "牌组码: $code"; show_slots "${ids[@]}"; else decode_deck "$code"; fi ;;
+      2) editor_menu ;;
+      3) local kw; kw=$(prompt "关键字（名字或 ID，可空）: ") || continue; cmd_list "$kw" ;;
+      4) local card c1 c2 c3
+         card=$(prompt "行动牌: ") || continue; c1=$(prompt "角色1: ") || continue
+         c2=$(prompt "角色2: ") || continue; c3=$(prompt "角色3: ") || continue
+         local a b cc d; a=$(resolve "$card" 2>/dev/null) && b=$(resolve "$c1" 2>/dev/null) && cc=$(resolve "$c2" 2>/dev/null) && d=$(resolve "$c3" 2>/dev/null) || { resolve "$card"; resolve "$c1"; resolve "$c2"; resolve "$c3"; continue; }
+         local -a ids=("$b" "$cc" "$d"); local i; for ((i=0;i<30;i++)); do ids+=("$a"); done
+         show_deck "${ids[@]}" ;;
+      5) local ch cd; ch=$(prompt "角色: ") || continue; cd=$(prompt "行动牌: ") || continue
+         local a b; a=$(resolve "$ch" 2>/dev/null) && b=$(resolve "$cd" 2>/dev/null) || { resolve "$ch"; resolve "$cd"; continue; }
+         local -a ids=(); local i; for ((i=0;i<3;i++)); do ids+=("$a"); done; for ((i=0;i<30;i++)); do ids+=("$b"); done
+         show_deck "${ids[@]}" ;;
+      6) local line; line=$(prompt "3 角色 + 30 张行动牌（空格/逗号分隔）: ") || continue
+         local -a toks=(); local t; for t in ${line//,/ }; do toks+=("$t"); done
+         if [ "${#toks[@]}" -ne 33 ]; then echo "需要 33 个（3 角色 + 30 牌），现在 ${#toks[@]} 个"; continue; fi
+         local -a ids=(); for t in "${toks[@]}"; do if id=$(resolve "$t" 2>/dev/null); then ids+=("$id"); else echo "失败: $(resolve "$t" 2>&1)"; ids=(); break; fi; done
+         [ "${#ids[@]}" -eq 33 ] && show_deck "${ids[@]}" ;;
+      7) local path; path=$(prompt "文件路径: ") || continue; [ -f "$path" ] && cmd_batch "$path" || echo "文件不存在" ;;
+      0) break ;;
+      *) echo "无效选择" ;;
+    esac
+  done
+}
+
+cmd_batch() {
+  local path="$1"
+      [ $# -ge 1 ] || die "缺少文件路径"
+      while IFS= read -r line; do
+        line="${line%%$'\r'}"
+        [ -z "$line" ] && continue
+        case "$line" in \#*) continue ;; esac
+        local -a toks=()
+        local t
+        for t in ${line//,/ }; do toks+=("$t"); done
+        if [ "${#toks[@]}" -eq 1 ] && ! [[ "${toks[0]}" =~ ^[0-9]+$ ]]; then
+          local -a ids=($(decode_deck "${toks[0]}")); show_deck "${ids[@]}"
+        else
+          local -a ids=()
+          for t in "${toks[@]}"; do ids+=("$(resolve "$t")"); done
+          show_deck "${ids[@]}"
+        fi
+        echo
+      done < "$path"
+}
+
 main() {
+  if [ $# -eq 0 ]; then interactive; exit 0; fi
   [ $# -ge 1 ] || { usage; exit 1; }
   local mode="$1"; shift
   case "$mode" in
@@ -1120,22 +1251,7 @@ main() {
       ;;
     batch)
       [ $# -ge 1 ] || die "缺少文件路径"
-      while IFS= read -r line; do
-        line="${line%%$'\r'}"
-        [ -z "$line" ] && continue
-        case "$line" in \#*) continue ;; esac
-        local -a toks=()
-        local t
-        for t in ${line//,/ }; do toks+=("$t"); done
-        if [ "${#toks[@]}" -eq 1 ] && ! [[ "${toks[0]}" =~ ^[0-9]+$ ]]; then
-          local -a ids=($(decode_deck "${toks[0]}")); show_deck "${ids[@]}"
-        else
-          local -a ids=()
-          for t in "${toks[@]}"; do ids+=("$(resolve "$t")"); done
-          show_deck "${ids[@]}"
-        fi
-        echo
-      done < "$1"
+      cmd_batch "$1"
       ;;
     *) die "未知模式: $mode" ;;
   esac
