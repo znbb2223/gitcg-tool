@@ -92,6 +92,8 @@ ctx.onmessage = async (
         },
         maxActions: 16,
         perfectInformation: message.perfectInformation,
+        // 后台胜率估算同样只按公开信息猜牌，否则读数虚高
+        realisticHidden: true,
       });
       ctx.postMessage({
         type: "ponderResult",
@@ -128,6 +130,8 @@ ctx.onmessage = async (
       maxCandidates: 8,
       // 推演内部跳过动作预览：实测同等预算下 rollout 数 ×2~3，胜率 +13.9 点
       skipRolloutPreview: true,
+      // 不再读取对手真实手牌/牌堆内容：按牌组库先验猜牌（A 方案）
+      realisticHidden: true,
       memory,
       perfectInformation: message.perfectInformation,
       heuristicScores: message.heuristicScores

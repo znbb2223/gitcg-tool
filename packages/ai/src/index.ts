@@ -48,6 +48,7 @@ export {
   takeCacheHitCount,
   recordPrecomputed,
   searchBestAction,
+  type DeterminizeOptions,
   type SearchCandidateStat,
   type SearchOptions,
   type SearchResult,

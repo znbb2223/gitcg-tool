@@ -30,6 +30,8 @@ export interface PonderOptions {
   budgetMs: number;
   /** 明牌模式：直接用真实隐藏信息（默认按公开信息采样） */
   perfectInformation?: boolean;
+  /** A 方案：连对手牌库内容也不读，按牌组库先验猜牌（与搜索保持一致） */
+  realisticHidden?: boolean;
   /** 每条线最多推进多少动作，0 表示下到结束 */
   maxActions?: number;
   rng?: () => number;
@@ -59,7 +61,9 @@ export async function ponderPosition(options: PonderOptions): Promise<PonderResu
       JSON.parse(serialized),
     )[0].state;
     if (!options.perfectInformation) {
-      determinizeState(restored, options.who, rng);
+      determinizeState(restored, options.who, rng, {
+        realisticHidden: options.realisticHidden,
+      });
     }
     // 推演只需要粗排序，跳过动作预览能显著提高同样时间内的 rollout 数
     const game = new Game(restored, { silent: true, skipPreview: true });

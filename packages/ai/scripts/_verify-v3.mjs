@@ -1,0 +1,18 @@
+import fs from "node:fs";
+import { CURRENT_VERSION, Game } from "@gi-tcg/core";
+import getData from "@gi-tcg/data";
+import { stateFeatureMap, stateFeatures, FEATURE_NAMES } from "../dist/index.js";
+const lib = JSON.parse(fs.readFileSync("/root/workspace/gi-tcg/packages/standalone/public/data/deck-library.json","utf8")).decks.filter(d=>d.chars?.length===3&&d.cards?.length>=28);
+const data = getData(CURRENT_VERSION);
+const strong = lib.find(d => (d.winRate ?? 0) > 0.6) ?? lib[0];
+const weak = lib.find(d => (d.winRate ?? 1) < 0.4) ?? lib[1];
+const game = new Game(Game.createInitialState({decks:[{characters:strong.chars,cards:strong.cards},{characters:weak.chars,cards:weak.cards}], data, versionBehavior: CURRENT_VERSION, randomSeed: 5}));
+const a = stateFeatureMap(game.state, 0);
+const b = stateFeatureMap(game.state, 1);
+console.log("维度:", FEATURE_NAMES.length);
+console.log("deckPriorDiff  A:", a.deckPriorDiff.toFixed(3), "| B:", b.deckPriorDiff.toFixed(3));
+console.log("myChar1Hp / enemyChar1Hp:", a.myChar1Hp.toFixed(2), "/", a.enemyChar1Hp.toFixed(2));
+console.log("round / iAmFirstSeat / isMyTurn:", a.round, a.iAmFirstSeat, a.isMyTurn);
+console.log("myShield / enemyShield:", a.myShield, a.enemyShield);
+const vec = stateFeatures(game.state, 0);
+console.log("向量长度:", vec.length, "| 无 NaN:", vec.every(v => Number.isFinite(v)));

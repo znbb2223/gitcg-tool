@@ -33,13 +33,16 @@ import {
 import { DiceType } from "@gi-tcg/typings";
 import {
   Game,
+  createCardEntity,
   deserializeGameStateLog,
   serializeGameStateLog,
+  type EntityDefinition,
   type EntityState,
   type GameState,
 } from "@gi-tcg/core";
 import type { GameData } from "@gi-tcg/core/data";
 import { costWeight } from "./evaluate";
+import { DECK_LIBRARY, type LibraryDeck } from "./data/deck-library";
 import { memoryKey, type DecisionMemory } from "./memory";
 import { valueOf, type ValueOptions } from "./value";
 
@@ -81,9 +84,19 @@ export interface SearchOptions {
   perfectInformation?: boolean;
   /** 启发式先验分（index → score），用于融合排序与剪枝 */
   heuristicScores?: Map<number, number>;
+  /**
+   * A 方案：不确定性化时连"对手这 30 张是什么"也不读，按牌组库先验猜一副牌。
+   * 默认 false（沿用真实牌的重新分配）；用来 A/B 量化"偷看牌库内容"带来的虚高。
+   */
+  realisticHidden?: boolean;
   /** 局面价值配置：查表 / 神经网络 / 旧版线性的开关 */
   valueOptions?: ValueOptions;
   log?: (message: string) => void;
+}
+
+export interface DeterminizeOptions {
+  /** 见 `SearchOptions.realisticHidden` */
+  realisticHidden?: boolean;
 }
 
 export interface SearchResult {
@@ -134,24 +147,38 @@ function rawPriority(action: Action): number {
  * - 对手的"手牌 + 牌堆"洗在一起重新发（只知道张数，不知道具体是哪几张）；
  * - 自己的牌堆也洗一遍（我们同样不知道下一抽）。
  * 这样搜索只用到"自己手牌 + 双方已公开的信息"。
+ *
+ * `realisticHidden` 打开时换成 A 方案：连"对手这 30 张到底是什么"也不看，
+ * 按牌组库先验重新猜一副牌（见 {@link guessEnemyCards}）。
  */
 export function determinizeState(
   state: GameState,
   who: 0 | 1,
   rng: () => number,
+  { realisticHidden = false }: DeterminizeOptions = {},
 ): void {
   const players = state.players as unknown as {
     hands: EntityState[];
     pile: EntityState[];
   }[];
-  const enemy = players[1 - who];
-  const pool = [...enemy.hands, ...enemy.pile];
+  const enemyWho = who === 0 ? 1 : 0;
+  const enemy = players[enemyWho];
   const handSize = enemy.hands.length;
+  if (realisticHidden) {
+    const guessed = guessEnemyCards(state, enemyWho, rng);
+    if (guessed !== null) {
+      enemy.hands = guessed.slice(0, handSize);
+      enemy.pile = guessed.slice(handSize);
+      shuffleInPlace(players[who].pile, rng);
+      return;
+    }
+  }
+  const pool = [...enemy.hands, ...enemy.pile];
 
   // 按概率分布采样：便宜的、即打即用的牌更容易被留在手里
   const weighted = pool.map((entity) => ({
     entity,
-    weight: handLikelihood(entity),
+    weight: handLikelihood(entity.definition),
   }));
   const hand: EntityState[] = [];
   for (let i = 0; i < handSize && weighted.length > 0; i++) {
@@ -169,12 +196,135 @@ export function determinizeState(
   shuffleInPlace(players[who].pile, rng);
 }
 
+/** 一副牌里同名卡最多几张（官方组卡规则） */
+const MAX_CARD_COPIES = 2;
+
+/**
+ * 角色组合 → 牌组库里同组合套牌的卡牌先验。
+ *
+ * 只用公开信息（对手站在台上的三个角色），与对手手牌无关，所以可以缓存：
+ * 同一局里每次推演都能复用，只需要按"已经露出来的牌"扣张数。
+ */
+const deckCardPriorCache = new Map<
+  string,
+  readonly { definition: EntityDefinition; weight: number }[]
+>();
+
+function deckCardPrior(state: GameState, who: 0 | 1) {
+  const characters = state.players[who].characters.map(
+    (character) => character.definition.id,
+  );
+  const key = [...characters].sort((a, b) => a - b).join(",");
+  const cached = deckCardPriorCache.get(key);
+  if (cached) {
+    return cached;
+  }
+  const sharedCharacters = (deck: LibraryDeck) =>
+    deck.characters.filter((id) => characters.includes(id)).length;
+  const sameCharacters = (deck: LibraryDeck) =>
+    characters.length === deck.characters.length &&
+    characters.every((id) => deck.characters.includes(id));
+  // 先找完全同队的三套牌；没有再放宽到共用两个角色、一个角色
+  const exact = DECK_LIBRARY.filter(sameCharacters);
+  const sharedTwo = DECK_LIBRARY.filter(
+    (deck) => sharedCharacters(deck) >= 2,
+  );
+  const decks =
+    exact.length > 0
+      ? exact
+      : sharedTwo.length > 0
+        ? sharedTwo
+        : DECK_LIBRARY.filter((deck) => sharedCharacters(deck) >= 1);
+  const counts = new Map<number, number>();
+  for (const deck of decks) {
+    // 同一套牌里带两张只算一次"这套牌用它"，真正带几张由权重外的张数上限管
+    for (const cardId of new Set(deck.cards)) {
+      counts.set(cardId, (counts.get(cardId) ?? 0) + 1);
+    }
+  }
+  const prior = [...counts]
+    .flatMap(([id, weight]) => {
+      const definition = state.data.entities.get(id);
+      return definition ? [{ definition, weight }] : [];
+    })
+    .sort((a, b) => b.weight - a.weight);
+  deckCardPriorCache.set(key, prior);
+  return prior;
+}
+
+/**
+ * 猜对手剩下的牌（手牌 + 牌堆），张数与真实张数一致。
+ *
+ * 只用公开信息：对手三个角色（→ 牌组库先验）、场上已经露出的牌（→ 扣张数）。
+ * 牌组库里凑不出任何候选时返回 null，调用方退回"洗真实牌"的老做法。
+ */
+function guessEnemyCards(
+  state: GameState,
+  who: 0 | 1,
+  rng: () => number,
+): EntityState[] | null {
+  const prior = deckCardPrior(state, who);
+  if (prior.length === 0) {
+    return null;
+  }
+  const player = state.players[who];
+  // 已经露过面的牌：场上实体 + 本次结算里被移除的牌，都算对手已经打出来过
+  const played = new Map<number, number>();
+  const visible = [
+    ...player.characters.flatMap((character) => character.entities),
+    ...player.supports,
+    ...player.summons,
+    ...player.combatStatuses,
+    ...player.removedEntities,
+  ];
+  for (const entity of visible) {
+    const id = entity.definition.id;
+    played.set(id, (played.get(id) ?? 0) + 1);
+  }
+  const pool = prior.flatMap(({ definition, weight }) => {
+    const copies = MAX_CARD_COPIES - (played.get(definition.id) ?? 0);
+    return copies > 0 ? [{ definition, weight, copies }] : [];
+  });
+  if (pool.length === 0) {
+    return null;
+  }
+  const handSize = player.hands.length;
+  const count = handSize + player.pile.length;
+  const remaining = pool.map((item) => ({ ...item }));
+  const picked: EntityState[] = [];
+  for (let i = 0; i < count; i++) {
+    if (remaining.length === 0) {
+      // 牌组库先验凑不够真实张数（罕见）：放宽同名张数限制继续猜
+      remaining.push(...pool.map((item) => ({ ...item })));
+    }
+    // 手牌按"留在手里"的似然加权，牌堆只按牌组先验
+    const inHand = i < handSize;
+    const weightOf = (item: (typeof remaining)[number]) =>
+      inHand ? item.weight * handLikelihood(item.definition) : item.weight;
+    const total = remaining.reduce((sum, item) => sum + weightOf(item), 0);
+    let target = rng() * total;
+    const index = Math.max(
+      remaining.findIndex((item) => {
+        target -= weightOf(item);
+        return target <= 0;
+      }),
+      0,
+    );
+    const item = remaining[index];
+    picked.push(createCardEntity(state, item.definition.id));
+    item.copies -= 1;
+    if (item.copies <= 0) {
+      remaining.splice(index, 1);
+    }
+  }
+  return picked;
+}
+
 /**
  * 一张牌"还在对手手里"的先验权重。
  * 用的是公开信息：牌的类别与费用（打不出去的高费牌更容易被留在手里等时机）。
  */
-function handLikelihood(entity: EntityState): number {
-  const definition = entity.definition;
+function handLikelihood(definition: EntityDefinition): number {
   const cost = definition.skills?.[0]?.initiativeSkillConfig?.requiredCost;
   let total = 0;
   if (cost) {
@@ -700,7 +850,9 @@ export async function searchBestAction(
       JSON.parse(serialized),
     )[0].state;
     if (!options.perfectInformation) {
-      determinizeState(restored, who, policyRng);
+      determinizeState(restored, who, policyRng, {
+        realisticHidden: options.realisticHidden,
+      });
     }
     const game = new Game(restored, {
       silent: true,

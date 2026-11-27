@@ -200,6 +200,7 @@ cd android && ./build.sh     # 需要 android-sdk、d8、apksigner
 **Q：AI 到底什么水平？**
 比随便打强，不如熟练玩家；原理、强度旋钮和局限都写在
 [docs/AI.zh.md](./docs/AI.zh.md)，已知问题见 [docs/KNOWN-ISSUES.zh.md](./docs/KNOWN-ISSUES.zh.md)。
+实测数据、失败清单与复现方法见 [artifacts/ai/README.md](./artifacts/ai/README.md)。
 
 **Q：能在电脑上用吗？**
 可以，用网页版（`pnpm --filter @gi-tcg/standalone dev`）或构建后本地起服务。

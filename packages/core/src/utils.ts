@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { PlungingStatus } from "./base/state";
+import { PlungingStatus, StateSymbol } from "./base/state";
 import { clampVariable } from "./data/utils";
 import type { Draft } from "immer";
 import {
@@ -65,6 +65,7 @@ import {
 import {
   GiTcgCoreInternalEntityNotFoundError,
   GiTcgCoreInternalError,
+  GiTcgDataError,
 } from "./error";
 import type { ActionInfoWithModification } from "./preview";
 import type { PlayerConfig } from "./player";
@@ -126,6 +127,36 @@ export interface RegularTypingInfo<
   Vars extends string = never,
 > extends TypingInfoBase<Ty, Vars> {
   areaType: RegularTypeAreaTypeMap<Ty>;
+}
+
+/**
+ * 直接构造一张卡牌实体（手牌 / 牌堆用），不经过引擎的 `createEntity` 变异。
+ *
+ * 给"隐藏信息确定性化"这类场景用：对手手牌不可见，只能按公开信息猜一副牌，
+ * 猜出来的牌不能复用真实实体。实体 id 从状态的全局迭代器里取，保证与之后
+ * 引擎创建的实体不冲突。
+ */
+export function createCardEntity(
+  state: GameState,
+  definitionId: number,
+): EntityState {
+  const definition = state.data.entities.get(definitionId);
+  if (typeof definition === "undefined") {
+    throw new GiTcgDataError(`Unknown card id ${definitionId}`);
+  }
+  // iterators 在状态里是只读的，但它是可变的普通对象（引擎靠自减分配实体 id）
+  const iterators = state.iterators as { id: number };
+  return {
+    [StateSymbol]: "entity",
+    id: iterators.id--,
+    definition,
+    variables: Object.fromEntries(
+      Object.entries(definition.varConfigs).map(
+        ([name, { initialValue }]) => [name, initialValue],
+      ),
+    ) as Variables,
+    attachments: [],
+  };
 }
 
 export function getEntityById(state: GameState, id: number): AnyState {

@@ -1,0 +1,10 @@
+59a3ba627f7ffd52f244dd82a0f5275761dd1bbf422cd25e95dea46b51f1c3bf  artifacts/ai/snapshots/ai-freeze-2026-11-28/ai-stack.tar.xz
+
+# 模型与 APK 校验
+a9c490680cc1663d8ff846ab51d1db5666e028c1fb20f37cdbb06dd25eb1ecb6  artifacts/ai/policy-40d-41k.json
+8fffcdf420d69187397153900fe906204b4d412d7c355d65f6cdafec28c4a8cc  artifacts/ai/policy-search-10k.json
+7b8d05a8c273843725480e48e4d84449e61fa4402f7dfdd4a15279f52e3ee7f9  artifacts/ai/policy-v3-285k.json
+fc40266b1da23fd819d72819fb023001e8ded667d9f4427875226e6f9580b338  artifacts/ai/value-40d-593k.json
+60a75ee85e405d17cbc17b16c88f20adb503ea3771d0d2c2237da96dfd575cf6  artifacts/ai/value-40d-71k.json
+68dc31eff5299eccd414ce9bfa2da417ab9e732ea05e05e7bee5e005751eccad  artifacts/ai/value-40d-focused.json
+ce04f9f1b1b137b6ed086b133ac7cfeece9bcefb6b76c73c1b431dc5d2e5294a  /sdcard/Download/DSH-Go/七圣召唤工具-0.11.157-隐藏信息修复.apk

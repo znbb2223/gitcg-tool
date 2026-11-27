@@ -393,7 +393,8 @@ export function createAi(options: AiOptions): AiPlayer {
   return new AiPlayer(options);
 }
 
-function isPayable(action: Action): boolean {
+/** 骰子够不够：采集脚本要复刻 AI 的候选池，否则候选里会混进付不起的动作 */
+export function isPayable(action: Action): boolean {
   const needsDice = action.requiredCost.some(
     (req) =>
       req.type !== PbDiceRequirementType.ENERGY &&

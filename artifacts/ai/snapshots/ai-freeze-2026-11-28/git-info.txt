@@ -1,0 +1,40 @@
+# 快照时间 2026-11-28 00:25:18 CST
+## gi-tcg HEAD
+fc315776667a49a60444bd2f96b1654f3c414891 2026-11-24 00:51:41 +0800 fix(web-ui): observer mode calculate void dice count in generate dice history (#1181)
+
+## gi-tcg 工作区改动（tracked）
+ M packages/assets-manager/src/constants.ts
+ M packages/assets-manager/src/manager.ts
+ M packages/card-data-viewer/src/CardFace.tsx
+ M packages/core/src/async_context.ts
+ M packages/core/src/game.ts
+ M packages/core/src/index.ts
+ M packages/core/src/preview.ts
+ M packages/core/src/utils.ts
+ M packages/deck-builder/src/AllCards.tsx
+ M packages/deck-builder/src/Card.tsx
+ M packages/deck-builder/src/CurrentDeck.tsx
+ M packages/deck-builder/src/DeckBuilder.tsx
+ M packages/deck-builder/src/FilterBar.tsx
+ M packages/deck-builder/src/style.css
+ M packages/detail-log-viewer/src/DetailLogViewer.tsx
+ M packages/detail-log-viewer/src/style.css
+ M packages/standalone/index.html
+ M packages/standalone/package.json
+ M packages/standalone/src/App.tsx
+ M packages/standalone/src/StandaloneParent.tsx
+ M packages/standalone/src/index.tsx
+ M packages/standalone/src/style.css
+ M packages/standalone/vite.config.ts
+ M packages/state-editor/src/components/CharacterEditor.tsx
+ M packages/state-editor/src/components/DeckImportSection.tsx
+ M packages/state-editor/src/components/DiceIcon.tsx
+ M packages/state-editor/src/components/DiceSection.tsx
+ M packages/state-editor/src/components/GameStateEditor.tsx
+ M packages/state-editor/src/components/GlobalSection.tsx
+ M packages/state-editor/src/components/VariableGrid.tsx
+
+## gitcg-publish HEAD
+5f108e64960a445104f6765521b035fddf07ded9 2026-11-27 22:50:13 +0800 docs(ai): 2026-11-27 实验总结 + 隐藏信息改造计划 + 下阶段待办
+
+## gitcg-publish 工作区

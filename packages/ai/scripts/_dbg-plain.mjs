@@ -1,0 +1,11 @@
+import fs from "node:fs";
+import { CURRENT_VERSION, Game } from "@gi-tcg/core";
+import getData from "@gi-tcg/data";
+import { createAi } from "../dist/index.js";
+const lib = JSON.parse(fs.readFileSync("/root/workspace/gi-tcg/packages/standalone/public/data/deck-library.json","utf8")).decks;
+const data = getData(CURRENT_VERSION);
+const decks=[{characters:lib[0].chars,cards:lib[0].cards},{characters:lib[5].chars,cards:lib[5].cards}];
+const game = new Game(Game.createInitialState({decks, data, versionBehavior: CURRENT_VERSION, randomSeed: 7}));
+for (const seat of [0,1]) game.players[seat].io = createAi({who:seat, seed:8+seat, delayMs:0, data});
+const w = await game.start();
+console.log("plain winner:", w, "rounds:", game.state.roundNumber);

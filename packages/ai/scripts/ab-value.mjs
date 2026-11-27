@@ -90,6 +90,9 @@ function instrument(adapter) {
 /** 明牌模式：推演时直接用真实隐藏信息。A/B 可以分别开，用来量化"看不清对手"损失多少 */
 const PERFECT_A = args.perfectInfo === "true";
 const PERFECT_B = args.perfectInfoB === "true";
+/** A 方案：不确定性化时连对手牌库内容也不读，按牌组库先验猜牌。A/B 可以分别开 */
+const REALISTIC_HIDDEN_A = args.realisticHidden === "true";
+const REALISTIC_HIDDEN_B = args.realisticHiddenB === "true";
 const A_MODE = args.a ?? "v2";
 const B_MODE = args.b ?? "v1";
 /** 策略网络模型；--a=policy / --b=policy 时需要 */
@@ -238,6 +241,7 @@ async function playOne(pairIndex, swap, aSeat) {
           rng: mulberry32(seed),
           valueOptions: valueOptionsOf(mode),
           perfectInformation: isA ? PERFECT_A : PERFECT_B,
+          realisticHidden: isA ? REALISTIC_HIDDEN_A : REALISTIC_HIDDEN_B,
           skipRolloutPreview: isA ? SKIP_PREVIEW_A : SKIP_PREVIEW_B,
           burstPlan: isA ? BURST_PLAN_A : BURST_PLAN_B,
           // 策略头只给候选排序，搜索仍是主力
@@ -287,6 +291,8 @@ for (let local = 0; local < PAIRS; local += 1) {
     const bWins = (first === 1 ? 1 : 0) + (second === 0 ? 1 : 0);
     stats.aWin += aWins;
     stats.bWin += bWins;
+    // 和棋（15 回合上限等）：以前只漏算不记，导致 games 比 2*pairs 少
+    stats.draw += (first === null ? 1 : 0) + (second === null ? 1 : 0);
     if (aWins === bWins) {
       stats.pairsSplit += 1;
     } else if (aWins > bWins) {

@@ -56,7 +56,7 @@ export {
   mergeIo,
 } from "./io";
 export * from "./error";
-export { getEntityById, getEntityArea, playSkillOfCard } from "./utils";
+export { getEntityById, getEntityArea, playSkillOfCard, createCardEntity } from "./utils";
 export * from "@gi-tcg/typings";
 
 import type { ExEntityType, HandleT, ExEntityState, ExTag } from "./data/type";
