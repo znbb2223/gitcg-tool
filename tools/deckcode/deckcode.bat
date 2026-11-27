@@ -1,5 +1,7 @@
 @echo off
 setlocal
+if not exist "%SystemRoot%\System32\certutil.exe" goto no_deps
+if not exist "%SystemRoot%\System32\cscript.exe" goto no_deps
 set "DC_PEM=%TEMP%\deckcode.pem"
 set "DC_JS=%TEMP%\deckcode.js"
 > "%DC_PEM%" echo -----BEGIN CERTIFICATE-----
@@ -1102,3 +1104,13 @@ cscript //nologo //E:JScript "%DC_JS%" %*
 set "DC_RC=%ERRORLEVEL%"
 del "%DC_PEM%" "%DC_JS%" >nul 2>&1
 exit /b %DC_RC%
+
+goto :eof
+:no_deps
+echo.
+echo This BAT needs Windows built-in certutil.exe and cscript.exe.
+echo It looks like you are on Wine / Winlator, which lacks them.
+echo Please open deckcode.html in a browser, or run deckcode.sh under a shell.
+echo.
+pause
+exit /b 1
