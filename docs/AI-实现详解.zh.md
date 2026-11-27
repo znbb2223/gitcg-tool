@@ -66,32 +66,11 @@
 
 ## 二、总体架构
 
-```
-                 ┌────────────────────────────────────────────┐
-                 │                 引擎 @gi-tcg/core           │
-                 │  规则 / 结算 / 预览 preview / 状态序列化     │
-                 └───────────────┬────────────────────────────┘
-                                 │ notify / rpc（只给该玩家可见信息）
-                 ┌───────────────▼────────────────────────────┐
-                 │            AiPlayer（player.ts）            │
-                 │  1. 收集合法动作 / 可支付动作                │
-                 │  2. 启发式打分 → 首选                        │
-                 │  3. 可选：把决策权交给 selectAction（搜索/DMC）│
-                 │  4. 难度噪声 / 失误率                        │
-                 └───────┬───────────────┬────────────────────┘
-                         │               │
-        ┌────────────────▼───┐   ┌───────▼─────────────────────┐
-        │  启发式 evaluate.ts │   │ 搜索 search.ts              │
-        │  scoreAction 14 项  │   │ 确定性化 + rollout + 预算   │
-        │  pickAction         │   │ 可接价值网 / 查表 / 记忆    │
-        └────────────────────┘   └───────┬─────────────────────┘
-                                         │ 评估
-                         ┌───────────────▼─────────────────────┐
-                         │ value.ts：44 维特征 → 线性/MLP/查表  │
-                         │ policy.ts：state-action 打分器       │
-                         │ dmc.ts：Q(s,a) 推理（不搜索）        │
-                         └─────────────────────────────────────┘
-```
+- **引擎（core）**：规则、结算、结算预览 `preview`、状态序列化；
+- **AiPlayer（player.ts）**：收集合法/可支付动作 → 启发式打分 → 可选交给 `selectAction`（搜索/DMC）→ 难度噪声；
+- **启发式（evaluate.ts）**：`scoreAction` 14 项权重 + `pickAction`；
+- **搜索（search.ts）**：确定性化 + rollout + 预算分配，可接价值网/查表/记忆；
+- **评估层**：`value.ts`（44 维 → 线性/MLP/查表）、`policy.ts`（state-action 打分）、`dmc.ts`（Q(s,a) 推理）。
 
 三条"策略层"可替换：**启发式**（永远兜底）、**搜索**（App 默认）、**策略网 / DMC**（实验，默认关）。
 评估层可插拔：手工 v1/v2、价值网络、查表、终局胜负。
@@ -103,25 +82,34 @@
 ### 3.1 `AiPlayer` 实现 `AiPlayerIO`
 
 ```ts
+// AI 与引擎之间的两个回调
 export interface AiPlayerIO {
+  // 引擎 → AI 的通知：状态更新、阶段变化
   notify: (notification: Notification) => void;
+  // 引擎 → AI 的请求：需要 AI 做决定
   rpc: (request: RpcRequest) => Promise<RpcResponse>;
 }
 
+// 启发式 AI 的默认实现
 export class AiPlayer implements AiPlayerIO {
-  private state: PbGameState | null = null;   // 只保存"我可见"的局面快照
+  // 只保存该玩家可见的局面快照，不存隐藏信息
+  private state: PbGameState | null = null;
   ...
+  // 统一入口：按请求类型分派
   rpc = async (request: RpcRequest) => {
+    // 按请求类型分支
     switch (request.request?.$case) {
+      // 主决策：出技能 / 打牌 / 切人 / 调和 / 结束
       case "action":
         return createRpcResponse("action", await this.decideAction(request.request.value.action));
+      // 重投骰子：决定保留哪些骰子
       case "rerollDice":
         return createRpcResponse("rerollDice", this.decideReroll(request.request.value));
+      // 其余请求省略（换留牌、选出战、选牌、选项）
       ...
     }
   };
-}
-```
+}```
 
 关键点：`state` 是引擎通过 `notify` 推送的**该玩家视角**快照（`exposeState(who, gameState)`），
 所以启发式**天然看不到对手手牌**；只有搜索为了推演，才需要"补全"隐藏信息（见第七节）。
@@ -129,28 +117,35 @@ export class AiPlayer implements AiPlayerIO {
 ### 3.2 出招主流程 `decideAction`
 
 ```ts
+// 主决策：从合法动作里选一手
 private async decideAction(actions: readonly Action[]) {
+  // 先筛出引擎标记为合法的动作下标
   const validIndexes = actions.flatMap((a, i) => a.validity === ActionValidity.VALID ? [i] : []);
   ...
+  // 再筛出"付得起"的动作
   const usable = validIndexes.filter((i) => isPayable(actions[i]));
-  const pool = usable.length > 0 ? usable : validIndexes;   // 全付不起时退回合法动作
+  // 全付不起时退回全部合法动作
+  const pool = usable.length > 0 ? usable : validIndexes;
 
+  // 启发式打分，取最高分
   const best = pickAction(actions, pool, { who, state, noise, rng, style, weights, data, ... });
 
   // 难度：按失误率随机出一手（故意变弱）
   if (this.blunderRate > 0 && this.rng() < this.blunderRate) { ... }
 
-  // 关键扩展点：搜索/策略网通过 selectAction 注入
+  // 关键扩展点：搜索 / 策略网 / DMC 通过 selectAction 注入
   if (this.selectAction) {
+    // 把合法动作、启发式首选与全部启发式分传给搜索
     const custom = await this.selectAction({ action: [...actions] }, {
       who, state, heuristicIndex: best.index,
       heuristicScores: scoreActions(actions, pool, { who, state, style, weights, data }),
     });
-    if (custom) return custom;    // 返回 null 就回退启发式
+    // 搜索返回 null 时回退启发式
+    if (custom) return custom;
   }
+  // 默认：启发式首选 + 引擎自动选的骰子
   return { chosenActionIndex: best.index, usedDice: [...chosen.autoSelectedDice] };
-}
-```
+}```
 
 这就是整个项目的"插件架构"：
 
@@ -161,8 +156,8 @@ private async decideAction(actions: readonly Action[]) {
 ### 3.3 难度与噪声
 
 ```ts
-const DIFFICULTY_NOISE = { easy: 6, normal: 0.8 };
-```
+// 难度噪声：easy 加 ±6 扰动，normal 只有 ±0.8
+const DIFFICULTY_NOISE = { easy: 6, normal: 0.8 };```
 
 `easy` 给评分加 ±6 的随机噪声（经常乱打），`normal` 只有 ±0.8（平手时扰动）。
 另有 `blunderRate`（按概率随机出一手），是"降强度"最直接的手段。
@@ -208,33 +203,41 @@ const DIFFICULTY_NOISE = { easy: 6, normal: 0.8 };
 **四个局面系数**（代码里逐项计算）：
 
 ```ts
-const raceFactor = enemyHp <= 15 ? 1.35 : enemyHp <= 22 ? 1.18 : 1.0;  // 对面越残，伤害越值钱
-const caution = myHp <= 12 ? 0.9 : 1.0;                                  // 自己残血更谨慎
-const cardPressure = (me?.handCard.length ?? 0) <= 2 ? -0.35 : 0;        // 手牌少别乱甩
-const speedBonus = action.isFast ? 0.25 : 0;                             // 快速行动不交节奏
-const diceEcon = 1 + clamp(diceGap * weights.diceEcon, -0.15, 0.25);     // 骰子领先更激进
-const boardPressure = 1 + clamp(boardGap * weights.boardPressure, -0.2, 0.45); // 场面落后铺场更值钱
-```
+// 对面越残，伤害越值钱
+const raceFactor = enemyHp <= 15 ? 1.35 : enemyHp <= 22 ? 1.18 : 1.0;
+// 自己残血时更谨慎
+const caution = myHp <= 12 ? 0.9 : 1.0;
+// 手牌少时别乱甩牌
+const cardPressure = (me?.handCard.length ?? 0) <= 2 ? -0.35 : 0;
+// 快速行动不交节奏，给一点加成
+const speedBonus = action.isFast ? 0.25 : 0;
+// 骰子领先时更激进，落后时保守
+const diceEcon = 1 + clamp(diceGap * weights.diceEcon, -0.15, 0.25);
+// 场面落后时铺场更值钱
+const boardPressure = 1 + clamp(boardGap * weights.boardPressure, -0.2, 0.45);```
 
 再叠加**风格**（aggro/control/midrange）与**斩杀线**：
 
 ```ts
+// 牌组风格：快攻加伤害、控制加治疗
 const styleDamage = style === "aggro" ? 1.15 : style === "control" ? 0.9 : 1;
-const pressureBonus = enemyActive && summary.damage > 0 && enemyActive.health - summary.damage <= 3 ? 0.8 : 0;
-```
+// 斩杀线：把敌方出战压到 3 血以内，额外加分
+const pressureBonus = enemyActive && summary.damage > 0 && enemyActive.health - summary.damage <= 3 ? 0.8 : 0;```
 
 ### 4.4 大招经济（充能逻辑）
 
 `useSkill` 分支里有一条"充能来之不易"的硬规则：
 
 ```ts
+// 需要充能的大招单独处理
 if (needsEnergy) {
   // 能击杀才值得放，否则先攒着
   return summary.kills > 0
+    // 能击杀：高基础分 + 伤害加成 - 费用惩罚
     ? 6 + summary.damage * 1.2 - cost * 0.05
+    // 不能击杀：低分，只保留少量伤害价值
     : -0.6 + summary.damage * 0.2 - cost * 0.05;
-}
-```
+}```
 
 普通技能则是"伤害 × 各项系数 + 击杀 + 反应 + 拆盾/治疗 + 场面"的加权和。
 这套公式是**拍脑袋定的**，但每一项都有明确理由，方便后续调参（实测调参空间已经很小）。
@@ -255,36 +258,46 @@ if (needsEnergy) {
 ### 5.1 动作类别
 
 ```ts
+// 六类动作，顺序是模型的一部分，改动后必须重训
 export const ACTION_KINDS = [
   "useSkill", "playCard", "switchActive", "elementalTuning", "declareEnd", "none",
-] as const;
-```
+] as const;```
 
 ### 5.2 每个候选的 7 个数值特征
 
 ```ts
+// 一个候选动作的 7 个数值特征
 export interface CandidateFeatures {
-  k: string;     // 类别（用于 6 维 one-hot）
-  cost: number;  // 总费用（骰子数）
-  dmg: number;   // 对敌方伤害 / 10（截断到 1）
-  kill: number;  // 能否击杀 0/1
-  fast: number;  // 是否快速行动 0/1
-  tgtHp: number; // 敌方出战血量 / 10
-  end: number;   // 是否"宣布结束" 0/1
-}
-```
+  // 类别（用于 6 维 one-hot）
+  k: string;
+  // 总费用（骰子数）
+  cost: number;
+  // 对敌方伤害 / 10（截断到 1）
+  dmg: number;
+  // 能否击杀 0/1
+  kill: number;
+  // 是否快速行动 0/1
+  fast: number;
+  // 敌方出战血量 / 10
+  tgtHp: number;
+  // 是否"宣布结束" 0/1
+  end: number;
+}```
 
 ### 5.3 拼成网络输入
 
 ```ts
+// 把候选动作拼成网络输入
 function encodeCandidate(c, withScore) {
   return [
-    ...ACTION_KINDS.map((kind) => (c.k === kind ? 1 : 0)),  // 6
-    c.cost, c.dmg, c.kill, c.fast, c.tgtHp, c.end,          // 6
-    ...(withScore ? [c.sc] : []),                            // 可选：启发式分
+    // 6 维 one-hot（动作类别）
+    ...ACTION_KINDS.map((kind) => (c.k === kind ? 1 : 0)),
+    // 6 维数值：费用、伤害、击杀、快攻、目标血、结束
+    c.cost, c.dmg, c.kill, c.fast, c.tgtHp, c.end,
+    // 可选：把启发式分也喂进去（模型输入变 14 维）
+    ...(withScore ? [c.sc] : []),
   ];
-}
-```
+}```
 
 所以策略网输入 = **44 维局面 + 13 维动作**（`usesScore` 时 14 维）。
 这个编码必须与 `tools/train_policy.py#encode_action` **逐位一致**，否则训出来的权重对不上。
@@ -292,18 +305,23 @@ function encodeCandidate(c, withScore) {
 ### 5.4 前向（与 DMC 共用同一个格式）
 
 ```ts
+// 给每个候选打分：44 维局面 + 13 维动作 → 前向
 export function policyScores(weights, stateVector, candidates) {
   return candidates.map((candidate) => {
+    // 拼输入并按训练时的 mean/std 归一化
     let current = [...stateVector, ...encodeCandidate(candidate, withScore)]
       .map((value, i) => (value - weights.mean[i]) / (weights.std[i] || 1));
+    // 逐层前向
     for (const layer of weights.layers) {
+      // 线性层：权重矩阵 × 输入
       current = layer.w.map((row) => row.reduce((s, w, i) => s + w * (current[i] ?? 0), 0));
-      current = current.map((v) => activate(v, layer.act));  // relu / tanh
+      // 激活函数：relu 或 tanh
+      current = current.map((v) => activate(v, layer.act));
     }
+    // 输出层只有一个分数
     return current[0] ?? 0;
   });
-}
-```
+}```
 
 `PolicyWeights` 就是一个纯 JSON：`stateDim / actionDim / mean / std / layers`，
 手机端一次前向是几微秒量级，不需要 WebGL。
@@ -334,21 +352,26 @@ export function policyScores(weights, stateVector, candidates) {
 ### 6.2 主循环骨架
 
 ```ts
-const baseSeed = Math.floor(rng() * 0x7fffffff);   // 公共随机数
-const candidates = heuristicOrder.slice(0, maxCandidates);  // 默认 8 个
+// 所有候选共用同一批随机世界（降方差）
+const baseSeed = Math.floor(rng() * 0x7fffffff);
+// 最多试 8 个候选
+const candidates = heuristicOrder.slice(0, maxCandidates);
 
 // 阶段 1：每个候选先跑 1 条线（粗筛）
 for (const index of stats.keys()) {
+  // 预算用完就停
   if (Date.now() >= deadline) break;
+  // 跑一条影子对局
   await playout(index, rollouts++);
 }
 // 阶段 2：剩余时间全砸给当前前三名
 while (Date.now() < deadline) {
+  // 取当前排名前三
   const pool = ranked.slice(0, 3);
+  // 选其中线数最少的补一条
   const target = 池子里线数最少的那个;
   await playout(target, rollouts++);
-}
-```
+}```
 
 **公共随机数**是关键工程细节：同一个 `rolloutIndex` 在所有候选上使用同一个种子，
 比较候选时面对的是同一批世界，方差显著变小。
@@ -356,6 +379,7 @@ while (Date.now() < deadline) {
 ### 6.3 一条 rollout 里发生了什么
 
 ```ts
+// 从序列化快照恢复一个可推演的局面
 const restored = deserializeGameStateLog(data, JSON.parse(serialized))[0].state;
 // 1) 补全隐藏信息（真实模式 / A 方案）
 if (!options.perfectInformation) determinizeState(restored, who, policyRng, { realisticHidden });
@@ -367,9 +391,10 @@ const game = new Game(restored, { silent: true, skipPreview: options.skipRollout
 game.players[who].io = { notify: () => {}, rpc: responder(who, true) };
 game.players[1 - who].io = { notify: () => {}, rpc: responder(1 - who, false) };
 
+// 打到底，拿胜负
 const winner = await game.start();
-const score = cutShort ? valueOf(game.state, who) : winner === who ? 1 : winner === null ? 0 : -1;
-```
+// 截断时用局面估值；否则赢=1 平=0 输=-1
+const score = cutShort ? valueOf(game.state, who) : winner === who ? 1 : winner === null ? 0 : -1;```
 
 - `fastReply`：推演专用廉价策略，**不读局面**，只看动作本身（伤害/击杀/反应/生成物/费用）；
 - `maxActions` 截断时（`RolloutCutoff`）用 `valueOf` 估分，避免"跑不完就丢弃"；
@@ -380,20 +405,24 @@ const score = cutShort ? valueOf(game.state, who) : winner === who ? 1 : winner 
 启发式先给每个合法动作排个序（`rawPriority`），再叠加：
 
 ```ts
-if (index === cachedIndex) bonus += 4;                   // 后台预计算命中
-if (tuningBoost > 0 && kind === "elementalTuning") bonus = tuningBoost;   // 大招缺骰
-if (burstBoost > 0 && isBurst) bonus = burstBoost;        // 大招就绪
-```
+// 后台预计算命中：把这一手顶到最前
+if (index === cachedIndex) bonus += 4;
+// 大招缺骰：优先元素调和凑骰
+if (tuningBoost > 0 && kind === "elementalTuning") bonus = tuningBoost;
+// 大招就绪：优先放大招
+if (burstBoost > 0 && isBurst) bonus = burstBoost;```
 
 另外：如果预览里已经能**直接打死一个角色**，且只有唯一一手能做到，就不再搜索，直接出。
 
 ### 6.5 预算怎么花
 
 ```ts
+// 分支越少，越不需要想那么久
 const branchingScale = candidates.length <= 2 ? 0.25 : candidates.length <= 4 ? 0.6 : 1;
+// 后台算过的局面只花 35% 预算复核
 const cachedBudget = cachedIndex >= 0 ? Math.min(budgetMs, cachedBudgetMs ?? budgetMs * 0.35) : budgetMs;
-const effectiveBudget = cachedBudget * (visits === 0 ? 1 : visits === 1 ? 0.6 : 0.4) * branchingScale;
-```
+// 见过的局面按访问次数打折，再乘分支系数
+const effectiveBudget = cachedBudget * (visits === 0 ? 1 : visits === 1 ? 0.6 : 0.4) * branchingScale;```
 
 - 分支少 → 少想；
 - 见过的局面（`visits`）→ 少想；
@@ -402,11 +431,13 @@ const effectiveBudget = cachedBudget * (visits === 0 ? 1 : visits === 1 ? 0.6 : 
 ### 6.6 结果融合
 
 ```ts
+// 推演结果与启发式先验融合
 const blended = stats.map((stat) => {
+  // 优先用外部传入的启发式分，否则用初始分
   const prior = options.heuristicScores?.get(stat.index) ?? stat.heuristic;
+  // 75% 推演胜率 + 25% 先验（tanh 压到 -1..1）
   return stat.average * 0.75 + Math.tanh(prior / 4) * 0.25;
-});
-```
+});```
 
 **75% 推演胜率 + 25% 启发式先验**：低预算时防止被一两条噪声线带偏。
 
@@ -440,16 +471,21 @@ const blended = stats.map((stat) => {
 ### 7.2 A 方案：只用公开信息猜一副牌
 
 ```ts
+// A 方案：只用公开信息猜对手的牌
 if (realisticHidden) {
+  // 按牌组库先验猜出对手整副牌
   const guessed = guessEnemyCards(state, enemyWho, rng);
   if (guessed !== null) {
+    // 前 handSize 张当手牌
     enemy.hands = guessed.slice(0, handSize);
+    // 剩下的当牌堆
     enemy.pile = guessed.slice(handSize);
+    // 自己的牌堆也洗一下
     shuffleInPlace(players[who].pile, rng);
+    // 不再读真实手牌/牌堆
     return;
   }
-}
-```
+}```
 
 `guessEnemyCards` 的流程：
 
@@ -460,13 +496,17 @@ if (realisticHidden) {
 4. 凑够真实张数（手牌 + 牌堆）。
 
 ```ts
+// 一张牌"还在对手手里"的先验权重
 function handLikelihood(definition) {
-  const cost = ...;  // 技能费用总和
+  // 技能费用总和（费用越高越可能被留在手里）
+  const cost = ...;
+  // 低费牌更容易被留在手里
   const costBonus = total <= 1 ? 1.45 : total <= 2 ? 1.15 : 0.85;
+  // 事件牌 > 装备牌 > 其它
   const typeBonus = type === "eventCard" ? 1.1 : type === "equipment" ? 1.0 : 0.95;
+  // 两个系数相乘
   return costBonus * typeBonus;
-}
-```
+}```
 
 ### 7.3 实测与结论
 
@@ -496,17 +536,24 @@ function handLikelihood(definition) {
 ### 8.2 网络与推理
 
 ```ts
+// 价值网前向：44 维 → MLP → [-1,1]
 export function nnValue(weights, features) {
+  // 没有权重直接返回 null（回退其它评估）
   if (!weights || weights.layers.length === 0) return null;
-  if (weights.mean.length !== features.length) return null;   // 维度不匹配直接放弃
+  // 维度对不上说明权重过期，放弃
+  if (weights.mean.length !== features.length) return null;
+  // 按训练时的 mean/std 归一化
   let current = features.map((v, i) => (v - weights.mean[i]) / (weights.std[i] || 1));
+  // 逐层前向
   for (const layer of weights.layers) {
+    // 线性层
     current = layer.w.map((row) => row.reduce((s, w, i) => s + w * (current[i] ?? 0), 0));
+    // 激活
     current = current.map((v) => activate(v, layer.act));
   }
+  // 输出压到 -1..1
   return clamp(current[0] ?? 0, -1, 1);
-}
-```
+}```
 
 训练脚本 `tools/train_value.py`：numpy MLP（64→32→1，tanh），标签是**终局胜负**，
 输出 [-1, 1] 当作"我方优势"。
@@ -560,21 +607,30 @@ DouZero 式：学 `Q(s, a)`，用**整局最终胜负**当标签，ε-greedy 自
 ### 10.2 推理代码（dmc.ts）
 
 ```ts
+// 候选池：合法且付得起；退化为合法；再退化为全部
 function candidatePool(actions) {
+  // 合法动作下标
   const valid = actions.flatMap((a, i) => a.validity === ActionValidity.VALID ? [i] : []);
+  // 其中付得起的
   const payable = valid.filter((i) => isPayable(actions[i]));
+  // 优先可支付，其次合法，最后全部
   return payable.length > 0 ? payable : valid.length > 0 ? valid : actions.map((_, i) => i);
 }
 
+// DMC 出招：Q 最大，ε 概率随机
 export function pickDmcAction(weights, actions, state, options) {
-  const candidates = dmcScoreCandidates(weights, actions, state, options);  // Q(s,a)
+  // 给候选算 Q(s,a)
+  const candidates = dmcScoreCandidates(weights, actions, state, options);
+  // ε-greedy：随机探索 or 取 Q 最大
   const picked = epsilon > 0 && rng() < epsilon
-    ? candidates[Math.floor(rng() * candidates.length)]                    // 探索
+    // 探索：随机一个候选
+    ? candidates[Math.floor(rng() * candidates.length)]
+    // 利用：取 Q 分数最高的候选
     : candidates[policyScores(weights, stateFeatures(state, who), candidates)
         .reduce((best, score, i, scores) => score > scores[best] ? i : best, 0)];
+  // 返回动作下标与骰子
   return { chosenActionIndex: picked.index, usedDice: actions[picked.index].autoSelectedDice ?? [] };
-}
-```
+}```
 
 权重格式与策略网**完全一致**（同一个 `PolicyWeights` JSON），所以手机端加载逻辑复用。
 
@@ -603,13 +659,17 @@ export function pickDmcAction(weights, actions, state, options) {
 ### 11.1 决策记忆（memory.ts）
 
 ```ts
+// 一条决策记忆
 export interface MemoryEntry {
+  // 动作指纹
   actionKey: string;
+  // 置信度
   confidence: number;
+  // 访问次数
   visits: number;
+  // 同一结论出现次数
   sameCount: number;
-}
-```
+}```
 
 `memoryKey(serializedState, request)` 用"局面序列化 + 候选动作指纹"做 key。
 命中且满足 `visits >= 2 && (sameCount >= 2 || confidence >= 0.7)` 时，**0ms 复用**。
@@ -619,14 +679,19 @@ export interface MemoryEntry {
 ### 11.2 学习器（learner.ts）
 
 ```ts
+// 经验库结构
 export interface LearningData {
+  // 数据版本
   version: string;
+  // 对局日志
   games: GameLogEntry[];
-  cards: Record<number, LearningEntry>;      // 单卡胜率
-  characters: Record<number, LearningEntry>; // 角色胜率
-  decks: Record<string, DeckRecord>;         // 牌组胜率
-}
-```
+  // 单卡胜率
+  cards: Record<number, LearningEntry>;
+  // 角色胜率
+  characters: Record<number, LearningEntry>;
+  // 牌组胜率
+  decks: Record<string, DeckRecord>;
+}```
 
 - `recordGame` 每局结束更新；
 - `cardWeights` / `characterWeights` 把胜率转成 [-0.3, 0.3] 的先验，喂给 `scoreAction`；
@@ -682,10 +747,9 @@ export interface LearningData {
 
 同一牌组、同一随机种子，打两局并**交换先手**，抵消先手优势与随机性：
 
-```
-对局 i：A 先手，B 后手（seed = i）
-对局 i+1：B 先手，A 后手（同一 seed）
-```
+- 对局 i：A 先手，B 后手（seed = i）；
+- 对局 i+1：B 先手，A 后手（同一 seed）；
+- 两局结果合并成一条样本，抵消先手与随机性。
 
 ### 14.2 工具
 
