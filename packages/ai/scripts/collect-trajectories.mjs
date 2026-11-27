@@ -12,10 +12,11 @@
 // 行格式: {"s":座位,"w":胜负,"t":回合,"f":[22维特征]}
 
 import fs from "node:fs";
+import zlib from "node:zlib";
 import path from "node:path";
 import { CURRENT_VERSION, Game } from "@gi-tcg/core";
 import getData from "@gi-tcg/data";
-import { createAi, searchBestAction, stateFeatures, styleOfDeck } from "../dist/index.js";
+import { createAi, searchBestAction, stateFeatureMap, stateFeatures, styleOfDeck } from "../dist/index.js";
 
 const LIB =
   process.env.GI_DECK_LIB ??
@@ -63,7 +64,7 @@ const usable = library.filter(
 );
 
 fs.mkdirSync(options.out, { recursive: true });
-const shardFile = path.join(options.out, `shard-${options.shard}.jsonl`);
+const shardFile = path.join(options.out, `shard-${options.shard}.jsonl.gz`);
 const progressFile = path.join(options.out, `progress-${options.shard}.json`);
 
 const previous = fs.existsSync(progressFile)
@@ -81,7 +82,8 @@ function appendLines(lines) {
   if (lines.length === 0) {
     return;
   }
-  fs.appendFileSync(shardFile, lines.join(""));
+  // 逐批 gzip 追加：多个 gzip member 拼接，gunzip 能连续解压
+  fs.appendFileSync(shardFile, zlib.gzipSync(Buffer.from(lines.join("")), { level: 6 }));
 }
 let lines = previous.lines;
 let games = previous.games;
@@ -102,6 +104,38 @@ function pickOpponent(rng) {
     return { search: true, blunder: 0 };
   }
   return { search: false, blunder: 0.2 };
+}
+
+/** 候选动作特征：类别、费用、目标血量、能否击杀、是否快攻、是否结束 */
+function actionFeatures(action, state, who) {
+  const act = action.action;
+  const enemy = state.players[1 - who];
+  const summary = (action.preview ?? []).reduce(
+    (acc, preview) => {
+      const mutation = preview.mutation;
+      if (mutation?.$case === "damage") {
+        const enemyIds = new Set(enemy.characters.map((c) => c.id));
+        if (enemyIds.has(mutation.value.targetId)) {
+          acc.damage += mutation.value.value;
+          acc.kill += mutation.value.causeDefeated ? 1 : 0;
+        }
+      }
+      return acc;
+    },
+    { damage: 0, kill: 0 },
+  );
+  const cost = (action.requiredCost ?? []).reduce((sum, req) => sum + req.count, 0);
+  const kind = act?.$case ?? "none";
+  const enemyActive = enemy.characters.find((c) => c.id === enemy.activeCharacterId);
+  return {
+    k: kind,
+    cost,
+    dmg: Math.min(summary.damage, 10) / 10,
+    kill: summary.kill > 0 ? 1 : 0,
+    fast: action.isFast ? 1 : 0,
+    tgtHp: Math.max(enemyActive?.variables.health ?? 0, 0) / 10,
+    end: kind === "declareEnd" ? 1 : 0,
+  };
 }
 
 /** 动作标签：类别 + 关键参数（角色 id / 卡牌 id / 技能 id） */
@@ -194,9 +228,19 @@ async function runGame(gameIndex) {
       const sampled = decisions % options.sample === 0;
       const snapshot = sampled
         ? {
-            features: stateFeatures(game.state, seat),
+            // v3：命名特征 + 全部候选的动作特征 + 可见牌信息
+            featureMap: stateFeatureMap(game.state, seat),
+            vector: stateFeatures(game.state, seat),
             round: game.state.roundNumber,
-            candidates: request.request.value.action.length,
+            candidates: request.request.value.action
+              .map((action, index) => ({ index, ...actionFeatures(action, game.state, seat) }))
+              .slice(0, 5),
+            candidateCount: request.request.value.action.length,
+            myHand: game.state.players[seat].hands.map((card) => card.definition.id),
+            enemyPlayed: game.state.players[1 - seat].removedEntities
+              ?.map((entity) => entity.definition?.id)
+              .filter((id) => typeof id === "number")
+              .slice(-12) ?? [],
           }
         : null;
       decisions += 1;
@@ -230,11 +274,22 @@ async function runGame(gameIndex) {
   for (const sample of samples) {
     lines.push(
       `${JSON.stringify({
+        v: 3,
         s: sample.seat,
         w: winner === sample.seat ? 1 : 0,
         t: sample.round,
-        f: sample.features.map((value) => Math.round(value * 1000) / 1000),
-        ...(sample.action ? { a: sample.action, i: sample.index, n: sample.candidates } : {}),
+        f: Object.fromEntries(
+          Object.entries(sample.featureMap).map(([key, value]) => [
+            key,
+            Math.round(value * 1000) / 1000,
+          ]),
+        ),
+        x: sample.vector.map((value) => Math.round(value * 1000) / 1000),
+        c: sample.candidates,
+        a: sample.index ?? -1,
+        l: sample.action ?? "none",
+        h: sample.myHand,
+        e: sample.enemyPlayed,
       })}\n`,
     );
   }

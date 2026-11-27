@@ -23,17 +23,33 @@
  */
 
 import type { GameState, PlayerState } from "@gi-tcg/core";
+import { EXPERIENCE_SEED } from "./data/experience-seed";
 
 /** 归一化后的局面特征，顺序固定，查表与神经网络共用 */
-export const FEATURE_ORDER = [
+/** 基础 22 维特征 */
+/**
+ * v3 特征清单（有序）：既用于神经网络的定长向量，也用于采集时的命名字段。
+ *
+ * 顺序一旦发布就不能改（模型维度校验会拒绝），新增特征只能往后追加。
+ */
+export const FEATURE_NAMES = [
+  // 总体血量与存活
   "myHp",
   "enemyHp",
   "myAlive",
   "enemyAlive",
   "myActiveHp",
   "enemyActiveHp",
+  // 资源总量
   "myEnergy",
   "enemyEnergy",
+  "myDice",
+  "enemyDice",
+  "myHands",
+  "enemyHands",
+  "myPile",
+  "enemyPile",
+  // 场面
   "mySummons",
   "enemySummons",
   "mySupports",
@@ -42,16 +58,37 @@ export const FEATURE_ORDER = [
   "enemyEquip",
   "myStatus",
   "enemyStatus",
-  "myHands",
-  "enemyHands",
-  "myDice",
-  "enemyDice",
-  "myPile",
-  "enemyPile",
+  "myShield",
+  "enemyShield",
+  // 逐个角色的血量与充能（各 3 个）
+  "myChar1Hp",
+  "myChar2Hp",
+  "myChar3Hp",
+  "enemyChar1Hp",
+  "enemyChar2Hp",
+  "enemyChar3Hp",
+  "myChar1Energy",
+  "myChar2Energy",
+  "myChar3Energy",
+  "enemyChar1Energy",
+  "enemyChar2Energy",
+  "enemyChar3Energy",
+  // 节奏与身份
+  "round",
+  "iAmFirstSeat",
+  "isMyTurn",
+  // 牌组强度先验（来自经验库）
+  "deckPriorDiff",
 ] as const;
 
-export type FeatureName = (typeof FEATURE_ORDER)[number];
+export type FeatureName = (typeof FEATURE_NAMES)[number];
+/** 特征向量（按 FEATURE_NAMES 顺序） */
 export type FeatureVector = number[];
+/** 兼容旧名字 */
+export const BASE_FEATURE_ORDER = FEATURE_NAMES;
+export const FEATURE_ORDER = FEATURE_NAMES;
+/** 是否启用牌组强度特征（v3 起默认开启） */
+export const USE_DECK_PRIOR_FEATURE = true;
 
 function playerOf(state: GameState, who: 0 | 1): PlayerState {
   return state.players[who];
@@ -71,8 +108,59 @@ function countAttachments(player: PlayerState): number {
   );
 }
 
-/** 把局面压成定长特征向量（归一化到大致 0~1 量级） */
-export function stateFeatures(state: GameState, who: 0 | 1): FeatureVector {
+/**
+ * 牌组强度先验：把初始牌堆的卡牌胜率、角色的胜率取平均。
+ * 结果在 [-1, 1]：正数表示这套牌历史上更常赢。
+ * 用 WeakMap 按牌堆数组缓存，避免每步重复计算。
+ */
+const deckPriorCache = new WeakMap<readonly object[], number>();
+
+function deckPriorOf(player: PlayerState): number {
+  const pile = player.initialPile as unknown as readonly object[];
+  const cached = deckPriorCache.get(pile);
+  if (typeof cached === "number") {
+    return cached;
+  }
+  const cardRates = player.initialPile.flatMap((definition) => {
+    const record = EXPERIENCE_SEED.cards[definition.id];
+    return record?.games ? [record.wins / record.games] : [];
+  });
+  const characterRates = player.characters.flatMap((character) => {
+    const record = EXPERIENCE_SEED.characters[character.definition.id];
+    return record?.games ? [record.wins / record.games] : [];
+  });
+  const rates = [...cardRates, ...characterRates];
+  // 没有先验时按 50% 处理，避免用 0 误导网络
+  const average = rates.length
+    ? rates.reduce((sum, rate) => sum + rate, 0) / rates.length
+    : 0.5;
+  const value = Math.max(-1, Math.min(1, (average - 0.5) * 4));
+  deckPriorCache.set(pile, value);
+  return value;
+}
+
+/** 某玩家当前生效的护盾总层数 */
+function shieldOf(player: PlayerState): number {
+  const entities = [
+    ...player.characters.flatMap((character) => character.entities),
+    ...player.combatStatuses,
+  ].filter((entity) => entity.variables.shield !== undefined);
+  return entities.reduce((sum, entity) => sum + (entity.variables.shield ?? 0), 0);
+}
+
+/** 角色按出战顺序取第 index 个（不足补 0） */
+function characterAt(player: PlayerState, index: number) {
+  return player.characters[index];
+}
+
+/**
+ * v3 特征：命名字段 → 归一化数值。
+ * 采集与训练共用这一份计算，保证线上/离线一致。
+ */
+export function stateFeatureMap(
+  state: GameState,
+  who: 0 | 1,
+): Record<FeatureName, number> {
   const me = playerOf(state, who);
   const enemy = playerOf(state, 1 - who);
   const hpOf = (player: PlayerState) =>
@@ -84,36 +172,72 @@ export function stateFeatures(state: GameState, who: 0 | 1): FeatureVector {
     player.characters.filter((character) => character.variables.health > 0).length / 3;
   const energyOf = (player: PlayerState) =>
     player.characters.reduce(
-      (sum, character) => sum + Math.min(character.variables.energy, character.variables.maxEnergy),
+      (sum, character) =>
+        sum + Math.min(character.variables.energy, character.variables.maxEnergy),
       0,
     ) / 6;
   const activeHpOf = (player: PlayerState) =>
     Math.max(activeOf(player)?.variables.health ?? 0, 0) / 10;
+  const charHp = (player: PlayerState, index: number) =>
+    Math.max(characterAt(player, index)?.variables.health ?? 0, 0) / 10;
+  const charEnergy = (player: PlayerState, index: number) => {
+    const character = characterAt(player, index);
+    if (!character) {
+      return 0;
+    }
+    return Math.min(character.variables.energy, character.variables.maxEnergy) / 3;
+  };
 
-  return [
-    hpOf(me),
-    hpOf(enemy),
-    aliveOf(me),
-    aliveOf(enemy),
-    activeHpOf(me),
-    activeHpOf(enemy),
-    energyOf(me),
-    energyOf(enemy),
-    me.summons.length / 4,
-    enemy.summons.length / 4,
-    me.supports.length / 4,
-    enemy.supports.length / 4,
-    countAttachments(me) / 6,
-    countAttachments(enemy) / 6,
-    me.combatStatuses.length / 4,
-    enemy.combatStatuses.length / 4,
-    me.hands.length / 10,
-    enemy.hands.length / 10,
-    me.dice.length / 8,
-    enemy.dice.length / 8,
-    me.pile.length / 30,
-    enemy.pile.length / 30,
-  ];
+  return {
+    myHp: hpOf(me),
+    enemyHp: hpOf(enemy),
+    myAlive: aliveOf(me),
+    enemyAlive: aliveOf(enemy),
+    myActiveHp: activeHpOf(me),
+    enemyActiveHp: activeHpOf(enemy),
+    myEnergy: energyOf(me),
+    enemyEnergy: energyOf(enemy),
+    myDice: me.dice.length / 8,
+    enemyDice: enemy.dice.length / 8,
+    myHands: me.hands.length / 10,
+    enemyHands: enemy.hands.length / 10,
+    myPile: me.pile.length / 30,
+    enemyPile: enemy.pile.length / 30,
+    mySummons: me.summons.length / 4,
+    enemySummons: enemy.summons.length / 4,
+    mySupports: me.supports.length / 4,
+    enemySupports: enemy.supports.length / 4,
+    myEquip: countAttachments(me) / 6,
+    enemyEquip: countAttachments(enemy) / 6,
+    myStatus: me.combatStatuses.length / 4,
+    enemyStatus: enemy.combatStatuses.length / 4,
+    myShield: shieldOf(me) / 10,
+    enemyShield: shieldOf(enemy) / 10,
+    myChar1Hp: charHp(me, 0),
+    myChar2Hp: charHp(me, 1),
+    myChar3Hp: charHp(me, 2),
+    enemyChar1Hp: charHp(enemy, 0),
+    enemyChar2Hp: charHp(enemy, 1),
+    enemyChar3Hp: charHp(enemy, 2),
+    myChar1Energy: charEnergy(me, 0),
+    myChar2Energy: charEnergy(me, 1),
+    myChar3Energy: charEnergy(me, 2),
+    enemyChar1Energy: charEnergy(enemy, 0),
+    enemyChar2Energy: charEnergy(enemy, 1),
+    enemyChar3Energy: charEnergy(enemy, 2),
+    round: Math.min(state.roundNumber, 15) / 15,
+    iAmFirstSeat: who === 0 ? 1 : 0,
+    isMyTurn: state.currentTurn === who ? 1 : 0,
+    deckPriorDiff: USE_DECK_PRIOR_FEATURE
+      ? deckPriorOf(me) - deckPriorOf(enemy)
+      : 0,
+  };
+}
+
+/** 定长向量（按 FEATURE_NAMES 顺序），喂给神经网络 */
+export function stateFeatures(state: GameState, who: 0 | 1): FeatureVector {
+  const map = stateFeatureMap(state, who);
+  return FEATURE_NAMES.map((name) => map[name]);
 }
 
 /** 旧版价值：血量 + 存活 + 场面 + 手牌 + 骰子，简单线性 */
@@ -163,6 +287,24 @@ const V2_WEIGHTS: Record<FeatureName, number> = {
   enemyDice: -0.7,
   myPile: 0.25,
   enemyPile: -0.25,
+  myShield: 0.6,
+  enemyShield: -0.6,
+  myChar1Hp: 0.35,
+  myChar2Hp: 0.35,
+  myChar3Hp: 0.35,
+  enemyChar1Hp: -0.35,
+  enemyChar2Hp: -0.35,
+  enemyChar3Hp: -0.35,
+  myChar1Energy: 0.5,
+  myChar2Energy: 0.5,
+  myChar3Energy: 0.5,
+  enemyChar1Energy: -0.5,
+  enemyChar2Energy: -0.5,
+  enemyChar3Energy: -0.5,
+  round: 0,
+  iAmFirstSeat: 0,
+  isMyTurn: 0,
+  deckPriorDiff: 0.6,
 };
 
 export function handcraftedValueV2(features: FeatureVector): number {
@@ -325,7 +467,14 @@ export function getValueOptions(): ValueOptions {
 export function valueOf(state: GameState, who: 0 | 1, options?: ValueOptions): number {
   const config = options ? { ...currentOptions, ...options } : currentOptions;
   if (config.mode === "v1") {
-    return handcraftedValueV1(state, who);
+    const handcrafted = handcraftedValueV1(state, who);
+    // 允许在旧线性公式之上继续叠加神经网络：用来验证"网络加在更优基底上"的效果
+    const nnOnV1 = nnValue(config.nn, stateFeatures(state, who));
+    if (nnOnV1 === null) {
+      return handcrafted;
+    }
+    const weight = config.nnWeight ?? 0.4;
+    return Math.max(-1, Math.min(1, (handcrafted + nnOnV1 * weight) / (1 + weight)));
   }
   const features = stateFeatures(state, who);
   const handcrafted = handcraftedValueV2(features);

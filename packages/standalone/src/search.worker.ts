@@ -46,6 +46,7 @@ interface SearchMessage {
   perfectInformation?: boolean;
   valueMode?: "v1" | "v2";
   nnEnabled?: boolean;
+  tableEnabled?: boolean;
   /** 只在第一次请求时传，之后 worker 自己记着 */
   memory?: DecisionMemoryData;
 }
@@ -81,10 +82,13 @@ ctx.onmessage = async (
         state,
         who: message.who,
         budgetMs: message.budgetMs,
+        // 查表数据目前随经验库下发，未装载时 tableValue 返回 null，不影响结果
         valueOptions: {
           mode: message.valueMode ?? "v2",
           nn: message.nnEnabled ? VALUE_NN : null,
           nnWeight: 0.45,
+          table: null,
+          tableWeight: message.tableEnabled ? 0.3 : 0,
         },
         maxActions: 16,
         perfectInformation: message.perfectInformation,

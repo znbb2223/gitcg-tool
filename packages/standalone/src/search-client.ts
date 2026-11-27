@@ -39,6 +39,10 @@ export interface SearchInput {
   valueMode?: "v1" | "v2";
   /** 是否启用神经网络价值函数 */
   nnEnabled?: boolean;
+  /** 是否启用查表价值（与神经网络互斥） */
+  tableEnabled?: boolean;
+  /** 是否启用搜索（false 时调用方应直接走启发式） */
+  searchEnabled?: boolean;
 }
 
 /** 搜索 worker 的简单请求/响应封装 */

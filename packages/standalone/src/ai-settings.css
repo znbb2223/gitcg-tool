@@ -17,3 +17,14 @@ body { background: #16120d; color: #e8e6e1; font-family: system-ui, sans-serif; 
 .ai-settings-tip { font-size: 12px; color: #a89a80; line-height: 1.6; }
 
 @import url("/responsive.css");
+
+/* AI 推理组件（简易 / 高级） */
+.ai-mode-toggle { margin-left: 8px; padding: 4px 10px; border-radius: 6px; border: 1px solid #4a3f2d; background: #2a323b; color: #e8e6e1; font-size: 11px; }
+.ai-settings-body label em { flex: 0 0 auto; font-style: normal; font-size: 12px; color: #a89a80; }
+.ai-settings-body input[type="checkbox"] { width: 18px; height: 18px; accent-color: #7fb286; }
+.ai-advanced .ai-group { margin: 14px 0 6px; font-size: 12px; color: #c8a97a; border-bottom: 1px solid #2f3841; padding-bottom: 4px; }
+.ai-advanced .ai-group:first-child { margin-top: 0; }
+.ai-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; font-size: 13px; color: #ddd2bc; }
+.ai-row > span { flex: 0 0 118px; }
+.ai-row > em { font-style: normal; font-size: 12px; color: #877c67; flex: 1; text-align: right; }
+.ai-row > input[type="number"] { width: 88px; background: #16120d; color: #e8e6e1; border: 1px solid #4a3f2d; border-radius: 6px; padding: 4px 6px; font-size: 12px; }

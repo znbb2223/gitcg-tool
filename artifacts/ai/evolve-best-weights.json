@@ -1,0 +1,20 @@
+{
+  "generation": 4,
+  "score": 0.625,
+  "weights": {
+    "damage": 1.156,
+    "kills": 11.057,
+    "debuffs": 0.328,
+    "created": 0.379,
+    "healed": 0.638,
+    "cardValue": 0.953,
+    "shieldChip": 0.534,
+    "shieldBreak": 1.613,
+    "shieldGain": 0.109,
+    "piercing": 0.183,
+    "cardPrior": 0.758,
+    "charPrior": 0.33,
+    "diceEcon": 0.055,
+    "boardPressure": 0.121
+  }
+}

@@ -1,64 +1,55 @@
-// 局面价值 A/B：同一套搜索，只换截断推演用的价值函数。
-// 用法: node packages/ai/scripts/ab-value.mjs [games] [budgetMs] [maxActions]
-// 例:   node packages/ai/scripts/ab-value.mjs 60 120 40
+// 局面价值 A/B：同局对打 + 镜像配对。
 //
-// 双方交替先手，牌组从牌组库里随机取；输出两个配置各自的胜场数。
+// 用法:
+//   node ab-value.mjs --a=v2 --b=v1 --pairs=15 --budget=150 --depth=10
+//   node ab-value.mjs --a=v2nn --b=v2 --pairs=15 --nn=/data/gitcg/data/nn-v1.json
+//
+// 配置: v1=旧线性公式 | v2=手工新特征 | v2nn=v2+神经网络
+// 镜像配对: 每一对用同一牌组同一随机种子打两局，交换先手后比较，抵消先手与随机性。
 
 import fs from "node:fs";
 import { CURRENT_VERSION, Game } from "@gi-tcg/core";
 import getData from "@gi-tcg/data";
 import { createAi, searchBestAction, styleOfDeck } from "../dist/index.js";
 
-const LIB = "/root/workspace/gi-tcg/packages/standalone/public/data/deck-library.json";
-const nnArg = process.argv.find((value) => value.startsWith("--nn="));
-const nnWeights = nnArg ? (await import("node:fs")).readFileSync(nnArg.slice(5), "utf8") : null;
-const positional = process.argv.slice(2).filter((value) => !value.startsWith("--"));
-const games = Number(positional[0] ?? 40);
-const budgetMs = Number(positional[1] ?? 120);
-const maxActions = Number(positional[2] ?? 40);
+const args = Object.fromEntries(
+  process.argv.slice(2).map((item) => {
+    const [key, value = "true"] = item.replace(/^--/, "").split("=");
+    return [key, value];
+  }),
+);
+const PAIRS = Number(args.pairs ?? 15);
+/** 起始对号：多实例并行时用它把对局切成互不重叠的区间 */
+const OFFSET = Number(args.offset ?? 0);
+const BUDGET = Number(args.budget ?? 150);
+const DEPTH = Number(args.depth ?? 10);
+const NN_PATH = args.nn ?? "/data/gitcg/data/nn-v1.json";
+const NN_WEIGHT = Number(args.nnWeight ?? 0.45);
+const A_MODE = args.a ?? "v2";
+const B_MODE = args.b ?? "v1";
 
 const data = getData(CURRENT_VERSION);
-const library = JSON.parse(fs.readFileSync(LIB, "utf8")).decks ?? [];
-const usable = library.filter((deck) => deck.chars?.length === 3 && deck.cards?.length >= 28);
-if (usable.length < 2) {
-  throw new Error("牌组库不可用");
+const library = JSON.parse(
+  fs.readFileSync(args.lib ?? "/data/gitcg/data/deck-library.json", "utf8"),
+).decks.filter((d) => d.chars?.length === 3 && d.cards?.length >= 28);
+const nn = fs.existsSync(NN_PATH) ? JSON.parse(fs.readFileSync(NN_PATH, "utf8")) : null;
+
+if (NN_PATH && !nn && (A_MODE === "v2nn" || B_MODE === "v2nn" || A_MODE === "v1nn" || B_MODE === "v1nn")) {
+  throw new Error(`缺少神经网络权重: ${NN_PATH}`);
 }
 
-const makeSearchAi = (who, seed, deck, mode) =>
-  createAi({
-    who,
-    seed,
-    delayMs: 0,
-    style: styleOfDeck(deck),
-    data,
-    selectAction: async (request, context) => {
-      const result = await searchBestAction(request, {
-        who,
-        data,
-        state: context.state ?? gameRef.state,
-        budgetMs,
-        maxActions,
-        rng: mulberry32(seed + Date.now() % 1000),
-        valueOptions:
-          mode === "v2"
-            ? { mode, ...(nnWeights ? { nn: JSON.parse(nnWeights), nnWeight: 0.4 } : {}) }
-            : { mode },
-      });
-      calls[mode] += 1;
-      const bucket = rollouts[mode];
-      for (const candidate of result.candidates ?? []) {
-        bucket.total += candidate.rollouts;
-        bucket.cut += candidate.draws;
-        bucket.win += candidate.wins;
-      }
-      return {
-        chosenActionIndex: result.chosenActionIndex,
-        usedDice: result.usedDice,
-      };
-    },
-  });
-
-let gameRef = null;
+const valueOptionsOf = (mode) => {
+  if (mode === "v1") {
+    return { mode: "v1" };
+  }
+  if (mode === "v1nn") {
+    return { mode: "v1", nn, nnWeight: NN_WEIGHT };
+  }
+  if (mode === "v2nn") {
+    return { mode: "v2", nn, nnWeight: NN_WEIGHT };
+  }
+  return { mode: "v2" };
+};
 
 function mulberry32(seed) {
   let a = seed >>> 0;
@@ -71,15 +62,11 @@ function mulberry32(seed) {
   };
 }
 
-const stats = { v2Win: 0, v1Win: 0, draw: 0, error: 0 };
-const rollouts = { v2: { total: 0, cut: 0, win: 0 }, v1: { total: 0, cut: 0, win: 0 } };
-const calls = { v1: 0, v2: 0 };
-
-for (let i = 0; i < games; i += 1) {
-  const deckA = usable[(i * 37) % usable.length];
-  const deckB = usable[(i * 37 + 211) % usable.length];
-  // 偶数局 v2 先手，奇数局交换座位，抵消先手优势
-  const v2Seat = i % 2 === 0 ? 0 : 1;
+/** A 执哪一方：pairIndex*2 + gameIndexInPair */
+async function playOne(pairIndex, swap, aSeat) {
+  const seedBase = 91000 + pairIndex * 131;
+  const deckA = library[(pairIndex * 37) % library.length];
+  const deckB = library[(pairIndex * 37 + 211) % library.length];
   const decks = [
     { characters: deckA.chars, cards: deckA.cards },
     { characters: deckB.chars, cards: deckB.cards },
@@ -89,43 +76,88 @@ for (let i = 0; i < games; i += 1) {
       decks,
       data,
       versionBehavior: CURRENT_VERSION,
-      randomSeed: 70000 + i * 97,
+      randomSeed: seedBase,
     }),
   );
-  gameRef = game;
-  for (const seat of [0, 1]) {
-    const mode = seat === v2Seat ? "v2" : "v1";
-    game.players[seat].io = makeSearchAi(seat, 70000 + i * 97 + seat, decks[seat], mode);
+  const seats = swap ? [1, 0] : [0, 1];
+  for (const seat of seats) {
+    const isA = seat === aSeat;
+    const mode = isA ? A_MODE : B_MODE;
+    const seed = seedBase + seat;
+    game.players[seat].io = createAi({
+      who: seat,
+      seed,
+      delayMs: 0,
+      style: styleOfDeck(decks[seat]),
+      data,
+      selectAction: async (request) => {
+        const result = await searchBestAction(request, {
+          who: seat,
+          data,
+          state: game.state,
+          budgetMs: BUDGET,
+          maxActions: DEPTH,
+          rng: mulberry32(seed),
+          valueOptions: valueOptionsOf(mode),
+        });
+        return {
+          chosenActionIndex: result.chosenActionIndex,
+          usedDice: result.usedDice,
+        };
+      },
+    });
   }
+  const winner = await game.start();
+  return winner;
+}
+
+const stats = { aWin: 0, bWin: 0, draw: 0, error: 0, pairsA: 0, pairsB: 0, pairsSplit: 0 };
+const startedAt = Date.now();
+
+for (let local = 0; local < PAIRS; local += 1) {
+  const pair = OFFSET + local;
   try {
-    const winner = await game.start();
-    if (winner === null) {
-      stats.draw += 1;
-    } else if (winner === v2Seat) {
-      stats.v2Win += 1;
+    // 两局镜像：第一局 A 先手，第二局 A 后手，牌组与种子完全相同
+    const first = await playOne(pair, false, 0);
+    const second = await playOne(pair, true, 1);
+    const aWins = (first === 0 ? 1 : 0) + (second === 1 ? 1 : 0);
+    const bWins = (first === 1 ? 1 : 0) + (second === 0 ? 1 : 0);
+    stats.aWin += aWins;
+    stats.bWin += bWins;
+    if (aWins === bWins) {
+      stats.pairsSplit += 1;
+    } else if (aWins > bWins) {
+      stats.pairsA += 1;
     } else {
-      stats.v1Win += 1;
+      stats.pairsB += 1;
     }
+    console.log(
+      `对 ${local + 1}/${PAIRS}（#${pair}）: A(${A_MODE}) ${aWins} - ${bWins} B(${B_MODE}) | 累计 A ${stats.aWin} B ${stats.bWin}`,
+    );
   } catch (error) {
     stats.error += 1;
-    console.error(`第 ${i} 局出错:`, error?.message ?? error);
-  }
-  if ((i + 1) % 5 === 0) {
-    console.log(`已跑 ${i + 1}/${games}`, JSON.stringify(stats));
+    console.error(`对 ${pair} 出错:`, error?.message ?? error);
   }
 }
 
-console.log("\n=== 调用次数 ===", JSON.stringify(calls));
-console.log("\n=== 推演统计 ===");
-for (const mode of ["v1", "v2"]) {
-  const b = rollouts[mode];
-  console.log(
-    `${mode}: 推演 ${b.total} 条，截断 ${b.cut} 条（${b.total ? ((b.cut / b.total) * 100).toFixed(1) : "-"}%），直接分出胜负 ${b.win + (b.total - b.cut - b.win)} 条`,
-  );
-}
-console.log("\n=== 结果 ===");
-console.log(JSON.stringify(stats, null, 2));
-const decided = stats.v2Win + stats.v1Win;
+const decided = stats.aWin + stats.bWin;
+const elapsed = Math.round((Date.now() - startedAt) / 1000);
 console.log(
-  `v2 胜率: ${decided ? ((stats.v2Win / decided) * 100).toFixed(1) : "-"}%（${stats.v2Win}/${decided}）`,
+  "\nRESULT " +
+    JSON.stringify({
+      a: A_MODE,
+      b: B_MODE,
+      pairs: PAIRS,
+      offset: OFFSET,
+      games: stats.aWin + stats.bWin + stats.draw,
+      aWin: stats.aWin,
+      bWin: stats.bWin,
+      draw: stats.draw,
+      error: stats.error,
+      aWinRate: decided ? +(stats.aWin / decided).toFixed(4) : null,
+      pairA: stats.pairsA,
+      pairB: stats.pairsB,
+      pairSplit: stats.pairsSplit,
+      seconds: elapsed,
+    }),
 );

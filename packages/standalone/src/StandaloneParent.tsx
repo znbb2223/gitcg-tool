@@ -55,6 +55,7 @@ import {
 import { loadLearning, saveLearning } from "./learning-storage";
 import { sortCardsForShare } from "./deck-order";
 import { loadAiSettings } from "./ai-settings-store";
+import { loadAiFlags } from "./ai-flags";
 import { writeCacheLog } from "./native";
 import { SearchClient, searchParallel } from "./search-client";
 import mergeErrorCause from "merge-error-cause";
@@ -62,12 +63,6 @@ import mergeErrorCause from "merge-error-cause";
 export type LocalPlayMode = "pvp" | "ai" | "aiai";
 
 
-/** 局面价值算法：'v1' 旧线性 / 'v2' 手工特征（默认） */
-const aiValueMode = (): "v1" | "v2" =>
-  localStorage.getItem("gitcg.ai.valueMode") === "v1" ? "v1" : "v2";
-
-/** 是否启用神经网络价值函数（默认关闭，A/B 达标后再打开） */
-const aiNnEnabled = () => localStorage.getItem("gitcg.ai.nn") === "1";
 
 export interface StandaloneParentProps {
   logs?: GameStateLogEntry[];
@@ -603,6 +598,7 @@ export function StandaloneParent(props: StandaloneParentProps) {
   };
   const createAiFor = (who: 0 | 1, game: Game, deck: Deck) => {
     const saved = readAiSettings();
+    const aiFlags = loadAiFlags();
     return createAi({
       who,
       style: saved?.style === "random" ? "random" : (saved?.style ?? styleFor(deck)),
@@ -615,14 +611,16 @@ export function StandaloneParent(props: StandaloneParentProps) {
       // 让评分能分辨"只能打破的盾"和"会自己到期的盾"
       data: getData(props.version),
       log: import.meta.env.DEV ? console.debug : undefined,
-      selectAction: props.aiThinking
+      selectAction: props.aiThinking && loadAiFlags().search.enabled
         ? async (request, context) => {
             const outcome = await searchParallel({
               version: props.version,
               who,
-              budgetMs: props.aiThinkBudgetMs ?? 8000,
-              valueMode: aiValueMode(),
-              nnEnabled: aiNnEnabled(),
+              budgetMs: aiFlags.search.budgetMs || (props.aiThinkBudgetMs ?? 8000),
+              valueMode: "v2",
+              nnEnabled: aiFlags.valueNet.enabled,
+              tableEnabled: aiFlags.valueTable.enabled,
+              searchEnabled: aiFlags.search.enabled,
               stateLog: JSON.stringify(
                 serializeGameStateLog([{ state: game.state, canResume: true }]),
               ),
@@ -829,8 +827,10 @@ export function StandaloneParent(props: StandaloneParentProps) {
               version: props.version,
               who,
               budgetMs: 2500,
-              valueMode: aiValueMode(),
-              nnEnabled: aiNnEnabled(),
+              valueMode: "v2",
+              nnEnabled: aiFlags.valueNet.enabled,
+              tableEnabled: aiFlags.valueTable.enabled,
+              searchEnabled: aiFlags.search.enabled,
               perfectInformation: props.aiPerfectInfo,
               stateLog: JSON.stringify(
                 serializeGameStateLog([{ state: game.state, canResume: true }]),

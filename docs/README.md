@@ -26,6 +26,7 @@
 | [ASSETS.zh.md](./ASSETS.zh.md) | 卡面 / 数据 / 牌组库抓取 |
 | [AI.zh.md](./AI.zh.md) | AI 原理 / 强度 / 旋钮 / 局限 |
 | [AI-ROADMAP.zh.md](./AI-ROADMAP.zh.md) | 14 个 AI 组件路线图与门槛 |
+| [AI-EXPERIMENTS.zh.md](./AI-EXPERIMENTS.zh.md) | A/B 实验记录、统计门槛、v3 数据格式 |
 | [KNOWN-ISSUES.zh.md](./KNOWN-ISSUES.zh.md) | 已知问题与限制 |
 | [ROADMAP.zh.md](./ROADMAP.zh.md) | 路线图 |
 | [development/](./development/README.md) | 上游维护者的数据与查询引擎文档 |

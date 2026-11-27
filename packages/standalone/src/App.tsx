@@ -54,6 +54,7 @@ type AiDifficulty = "easy" | "normal" | "hard" | "nightmare" | "hell" | "custom"
 
 import { RANDOM_DECK_CODES } from "./data/random-deck-codes";
 import { saveAiSettings } from "./ai-settings-store";
+import { loadAiFlags } from "./ai-flags";
 
 /** 每次进入从牌组库里随机挑两套预填（不做任何筛选） */
 const pickRandomCode = (exclude?: string) => {
@@ -86,7 +87,13 @@ export function App() {
   const [playMode, setPlayMode] = createSignal<PlayMode>("ai");
   const [aiDelay, setAiDelay] = createSignal(700);
   const [aiBuildsDeck, setAiBuildsDeck] = createSignal(false);
-  const [aiThinking, setAiThinking] = createSignal(false);
+  /** 搜索是否启用统一由「设置 → AI 推理组件」决定，面板不再单独开关 */
+  const [aiThinkingVersion, setAiThinkingVersion] = createSignal(0);
+  const aiThinking = () => {
+    // 依赖版本号以便设置变化后重新求值
+    aiThinkingVersion();
+    return loadAiFlags().search.enabled;
+  };
   const [aiPerfectInfo, setAiPerfectInfo] = createSignal(false);
   const [aiGoesFirst, setAiGoesFirst] = createSignal(true);
   const [aiBlunder, setAiBlunder] = createSignal(0.15);
@@ -130,30 +137,25 @@ export function App() {
   const applyDifficulty = (level: AiDifficulty) => {
     setAiDifficulty(level);
     if (level === "easy") {
-      setAiThinking(false);
       setAiBlunder(0.35);
       setAiDeckStrength("weak");
       setAiDelay(300);
     } else if (level === "normal") {
-      setAiThinking(true);
       setThinkBudget(2000);
       setAiBlunder(0.15);
       setAiDeckStrength("random");
       setAiDelay(300);
     } else if (level === "hard") {
-      setAiThinking(true);
       setThinkBudget(8000);
       setAiBlunder(0.03);
       setAiDeckStrength("strong");
       setAiDelay(0);
     } else if (level === "nightmare") {
-      setAiThinking(true);
       setThinkBudget(15000);
       setAiBlunder(0.01);
       setAiDeckStrength("strong");
       setAiDelay(0);
     } else if (level === "hell") {
-      setAiThinking(true);
       setThinkBudget(25000);
       setAiBlunder(0);
       setAiDeckStrength("strong");
@@ -685,17 +687,6 @@ export function App() {
                         }
                       />
                     </div>
-                  </div>
-                  <div class="config-panel__deck">
-                    <label>搜索推演</label>
-                    <label class="config-panel__checkbox" title="现场自组：忽略上面的先手牌组，让 AI 自己配一套">
-                      <input
-                        type="checkbox"
-                        checked={aiThinking()}
-                        onChange={(e) => setAiThinking(e.currentTarget.checked)}
-                      />
-                      开启（后台线程搜索，每步限时）
-                    </label>
                   </div>
                   <Show when={aiThinking()}>
                     <div class="config-panel__deck">
