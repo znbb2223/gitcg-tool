@@ -10,6 +10,10 @@
 
 > 状态：2026-11-28 收尾。**当前只含 7.2.0 数据，短期不再更新**；版本合并见 [MAINTENANCE.zh.md](./MAINTENANCE.zh.md)。
 
+> **致谢**：项目起源「**雨酱牌**」；规则引擎与卡牌数据来自
+> [piovium/genius-invokation](https://github.com/piovium/genius-invokation)（AGPL-3.0）；
+> 主要开发、实验编排、训练、文档与工具链由 **DSH（DeepSeek Harness）** 完成。
+
 ## 一、给使用者
 
 | 文档 | 内容 |
