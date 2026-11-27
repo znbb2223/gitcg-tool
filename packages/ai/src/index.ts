@@ -16,10 +16,19 @@
 export {
   AiPlayer,
   createAi,
+  isPayable,
   type AiDifficulty,
   type AiOptions,
   type AiPlayerIO,
 } from "./player";
+export {
+  ACTION_KINDS,
+  candidateFeatures,
+  policyScores,
+  type CandidateFeatures,
+  type PolicyWeights,
+  type ScoredCandidate,
+} from "./policy";
 export {
   DEFAULT_AI_WEIGHTS,
   costWeight,

@@ -8,9 +8,21 @@
 // 镜像配对: 每一对用同一牌组同一随机种子打两局，交换先手后比较，抵消先手与随机性。
 
 import fs from "node:fs";
-import { CURRENT_VERSION, Game } from "@gi-tcg/core";
+import { CURRENT_VERSION, Game, exposeState } from "@gi-tcg/core";
 import getData from "@gi-tcg/data";
-import { createAi, searchBestAction, styleOfDeck } from "../dist/index.js";
+import { ActionValidity } from "@gi-tcg/typings";
+import {
+  candidateFeatures,
+  createAi,
+  createMemory,
+  createMemoryAdapter,
+  isPayable,
+  policyScores,
+  scoreAction,
+  searchBestAction,
+  stateFeatures,
+  styleOfDeck,
+} from "../dist/index.js";
 
 const args = Object.fromEntries(
   process.argv.slice(2).map((item) => {
@@ -23,10 +35,57 @@ const PAIRS = Number(args.pairs ?? 15);
 const OFFSET = Number(args.offset ?? 0);
 const BUDGET = Number(args.budget ?? 150);
 const DEPTH = Number(args.depth ?? 10);
+/** B 方的推演深度（默认与 A 相同）；用来单独测"加深搜索"的效果 */
+const DEPTH_B = Number(args.depthB ?? DEPTH);
 const NN_PATH = args.nn ?? "/data/gitcg/data/nn-v1.json";
 const NN_WEIGHT = Number(args.nnWeight ?? 0.45);
+/** 学习到的单卡先验（cardId → -0.3..0.3），传给 AI 的 cardPriors */
+const PRIORS_PATH = args.priors ?? null;
+const cardPriors = PRIORS_PATH
+  ? new Map(
+      Object.entries(JSON.parse(fs.readFileSync(PRIORS_PATH, "utf8"))).map(([id, value]) => [
+        Number(id),
+        Number(value),
+      ]),
+    )
+  : undefined;
+/** B 方的思考预算；用来单独测"算力够不够"（默认与 A 相同） */
+const BUDGET_B = Number(args.budgetB ?? BUDGET);
+/** 决策记忆：A 方的搜索挂上记忆，B 方不挂；顺便统计命中率 */
+const USE_MEMORY = args.memory === "true";
+/** 策略网络作为搜索的先验排序（不是替代搜索） */
+const USE_POLICY_GUIDE = args.policyGuide === "true"? true : args.policyGuide === "both";
+/** 诊断：统计每次搜索实际跑了多少 rollout、花了多少毫秒 */
+const SEARCH_STATS = args.searchStats === "true";
+/** rollout 内跳过动作预览：A/B 可分别开，用来测"加速换来的 rollout 数"值不值 */
+const SKIP_PREVIEW_A = args.skipPreview === "true";
+const SKIP_PREVIEW_B = args.skipPreviewB === "true";
+const searchStats = { decisions: 0, rollouts: 0, elapsed: 0, budget: 0 };
+const memoryStats = { gets: 0, hits: 0 };
+const memoryA = USE_MEMORY ? instrument(createMemoryAdapter(createMemory())) : null;
+
+function instrument(adapter) {
+  return {
+    get(key) {
+      memoryStats.gets += 1;
+      const entry = adapter.get(key);
+      if (entry) {
+        memoryStats.hits += 1;
+      }
+      return entry;
+    },
+    record: (...args) => adapter.record(...args),
+  };
+}
+
+/** 明牌模式：推演时直接用真实隐藏信息。A/B 可以分别开，用来量化"看不清对手"损失多少 */
+const PERFECT_A = args.perfectInfo === "true";
+const PERFECT_B = args.perfectInfoB === "true";
 const A_MODE = args.a ?? "v2";
 const B_MODE = args.b ?? "v1";
+/** 策略网络模型；--a=policy / --b=policy 时需要 */
+const POLICY_PATH =
+  !args.policy || args.policy === "true" ? "/data/gitcg/data/policy-40d.json" : args.policy;
 
 const data = getData(CURRENT_VERSION);
 const library = JSON.parse(
@@ -37,6 +96,66 @@ const nn = fs.existsSync(NN_PATH) ? JSON.parse(fs.readFileSync(NN_PATH, "utf8"))
 if (NN_PATH && !nn && (A_MODE === "v2nn" || B_MODE === "v2nn" || A_MODE === "v1nn" || B_MODE === "v1nn")) {
   throw new Error(`缺少神经网络权重: ${NN_PATH}`);
 }
+
+const policy =
+  A_MODE === "policy" || B_MODE === "policy"
+    ? JSON.parse(fs.readFileSync(POLICY_PATH, "utf8"))
+    : null;
+
+/** 策略网络给出的候选排序分，归一化到和启发式同量级，喂给搜索当先验 */
+function policyPrior(actions, who, state, deck) {
+  const pool = actions.flatMap((action, index) =>
+    action.validity === ActionValidity.VALID && isPayable(action) ? [index] : [],
+  );
+  if (pool.length === 0) {
+    return undefined;
+  }
+  const needsScore = policy.usesScore !== false;
+  const context = needsScore
+    ? { who, state: exposeState(who, state), data, style: styleOfDeck(deck) }
+    : null;
+  const candidates = pool.map((index) => ({
+    index,
+    ...candidateFeatures(actions[index], state, who),
+    sc: needsScore ? scoreAction(actions[index], context).score : 0,
+  }));
+  const scores = policyScores(policy, stateFeatures(state, who), candidates);
+  const min = Math.min(...scores);
+  const max = Math.max(...scores);
+  const span = max - min || 1;
+  // 搜索里先验走 tanh(prior/4)，抬到 0~6 才和启发式分数同量级
+  return new Map(
+    candidates.map((candidate, i) => [candidate.index, ((scores[i] - min) / span) * 6]),
+  );
+}
+
+/** 用训练好的策略网络挑动作：候选池和 AI 自己的一致（合法且付得起），不跑搜索 */
+function pickByPolicy(actions, who, state, deck) {
+  const legal = actions.flatMap((action, index) =>
+    action.validity === ActionValidity.VALID && isPayable(action) ? [index] : [],
+  );
+  const pool = legal.length > 0 ? legal : actions.map((_, index) => index);
+  const needsScore = policy.usesScore !== false;
+  const context = needsScore
+    ? { who, state: exposeState(who, state), data, style: styleOfDeck(deck) }
+    : null;
+  const candidates = pool.map((index) => ({
+    index,
+    ...candidateFeatures(actions[index], state, who),
+    // 不含 sc 的模型不需要启发式打分，这一步省掉才有速度优势
+    sc: needsScore ? scoreAction(actions[index], context).score : 0,
+  }));
+  const scores = policyScores(policy, stateFeatures(state, who), candidates);
+  const best = candidates[scores.indexOf(Math.max(...scores))];
+  return {
+    chosenActionIndex: best.index,
+    usedDice: actions[best.index].autoSelectedDice ?? [],
+  };
+}
+
+/** heurnp = 纯启发式但关掉牌/角色经验先验，用来单独测先验值多少 */
+const weightsOf = (mode) =>
+  mode === "heurnp" ? { cardPrior: 0, charPrior: 0 } : undefined;
 
 const valueOptionsOf = (mode) => {
   if (mode === "v1") {
@@ -90,16 +209,38 @@ async function playOne(pairIndex, swap, aSeat) {
       delayMs: 0,
       style: styleOfDeck(decks[seat]),
       data,
+      weights: weightsOf(mode),
+      // 学习先验只给 A 方，B 方当对照
+      cardPriors: isA ? cardPriors : undefined,
       selectAction: async (request) => {
+        // 不跑搜索的两种模式：返回 undefined 让 AI 落回启发式，或交给策略网络
+        if (mode === "heur" || mode === "heurnp") {
+          return undefined;
+        }
+        if (mode === "policy") {
+          return pickByPolicy(request.action, seat, game.state, decks[seat]);
+        }
         const result = await searchBestAction(request, {
           who: seat,
           data,
           state: game.state,
-          budgetMs: BUDGET,
-          maxActions: DEPTH,
+          budgetMs: isA ? BUDGET : BUDGET_B,
+          maxActions: isA ? DEPTH : DEPTH_B,
           rng: mulberry32(seed),
           valueOptions: valueOptionsOf(mode),
+          perfectInformation: isA ? PERFECT_A : PERFECT_B,
+          skipRolloutPreview: isA ? SKIP_PREVIEW_A : SKIP_PREVIEW_B,
+          // 策略头只给候选排序，搜索仍是主力
+          heuristicScores:
+            USE_POLICY_GUIDE && policy ? policyPrior(request.action, seat, game.state, decks[seat]) : undefined,
+          memory: isA && memoryA ? memoryA : undefined,
         });
+        if (SEARCH_STATS) {
+          searchStats.decisions += 1;
+          searchStats.rollouts += result.rollouts ?? 0;
+          searchStats.elapsed += result.elapsedMs ?? 0;
+          searchStats.budget += BUDGET;
+        }
         return {
           chosenActionIndex: result.chosenActionIndex,
           usedDice: result.usedDice,
@@ -158,6 +299,12 @@ console.log(
       pairA: stats.pairsA,
       pairB: stats.pairsB,
       pairSplit: stats.pairsSplit,
+      searchDecisions: searchStats.decisions,
+      searchRollouts: searchStats.rollouts,
+      searchElapsedMs: searchStats.elapsed,
+      searchBudgetMs: searchStats.budget,
+      memoryGets: memoryStats.gets,
+      memoryHits: memoryStats.hits,
       seconds: elapsed,
     }),
 );

@@ -233,6 +233,14 @@ function rolloutPriority(action: Action, ctx: RolloutContext | null): number {
   if (action.action?.$case === "declareEnd") {
     return -1000;
   }
+  if (action.preview.length === 0) {
+    // 跳过预览的推演：按动作类型和费用粗排，够用即可
+    const kind = action.action?.$case;
+    const base =
+      kind === "useSkill" ? 6 : kind === "playCard" ? 5 : kind === "switchActive" ? 3 : 1;
+    const cost = (action.requiredCost ?? []).reduce((sum, req) => sum + req.count, 0);
+    return base - cost * 0.2;
+  }
   const summary = action.preview.reduce(
     (acc, preview) => {
       const mutation = preview.mutation;
@@ -513,7 +521,10 @@ export async function searchBestAction(
     if (!options.perfectInformation) {
       determinizeState(restored, who, policyRng);
     }
-    const game = new Game(restored, { silent: true });
+    const game = new Game(restored, {
+      silent: true,
+      skipPreview: options.skipRolloutPreview ?? false,
+    });
     let pendingKey: string | null = stat.key;
     let actionCount = 0;
     let cutShort = false;

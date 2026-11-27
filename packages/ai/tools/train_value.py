@@ -10,6 +10,7 @@
 
 import argparse
 import glob
+import gzip
 import json
 import sys
 
@@ -29,6 +30,10 @@ def parse_args():
     return parser.parse_args()
 
 
+def open_text(path):
+    return gzip.open(path, "rt", encoding="utf-8") if path.endswith(".gz") else open(path, encoding="utf-8")
+
+
 def load_samples(patterns):
     paths = []
     for pattern in patterns:
@@ -37,13 +42,13 @@ def load_samples(patterns):
         raise SystemExit(f"没有匹配到数据文件: {patterns}")
     features, labels = [], []
     for path in sorted(set(paths)):
-        with open(path, encoding="utf-8") as file:
+        with open_text(path) as file:
             for line in file:
                 line = line.strip()
                 if not line:
                     continue
                 row = json.loads(line)
-                features.append(row["f"])
+                features.append(row["x"] if "x" in row else row["f"])
                 labels.append(float(row["w"]))
     if not features:
         raise SystemExit("数据为空")

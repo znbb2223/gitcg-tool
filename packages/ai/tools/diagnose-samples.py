@@ -40,8 +40,9 @@ def main():
     print(f"回合分布: {dict(sorted(rounds.items(), key=lambda kv: (kv[0] is None, kv[0])))}")
     print(f"动作类型: {actions}")
 
-    # 特征统计（只处理数组形式 f）
-    matrix = [r["f"] for r in rows if isinstance(r.get("f"), list)]
+    # 特征统计：v3 用定长向量 x，旧版直接用 f 数组
+    matrix = [r["x"] if "x" in r else r["f"] for r in rows]
+    matrix = [row for row in matrix if isinstance(row, list)]
     if matrix:
         dim = len(matrix[0])
         print(f"\n特征维度: {dim}")

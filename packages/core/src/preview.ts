@@ -247,6 +247,8 @@ export class ActionPreviewer {
     private readonly originalState: GameState,
     private readonly who: 0 | 1,
     private readonly skipError: boolean,
+    /** 只改动作字段、不做沙盒模拟：费用/骰子依然准，preview 返回空 */
+    private readonly skipPreview = false,
   ) {}
 
   async modifyAndPreview(
@@ -276,6 +278,9 @@ export class ActionPreviewer {
     await ctx.precalculateEvent("modifyAction4", eventArgPreCalc);
     const newActionInfo: Writable<WithActionDetail<ActionInfoBase>> =
       eventArgPreCalc.action;
+    if (this.skipPreview) {
+      return { ...newActionInfo, eventArg: eventArgReal, preview: [] };
+    }
 
     const player = () => ctx.state.players[this.who];
     const activeCh = () =>

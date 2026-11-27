@@ -61,7 +61,8 @@ export async function ponderPosition(options: PonderOptions): Promise<PonderResu
     if (!options.perfectInformation) {
       determinizeState(restored, options.who, rng);
     }
-    const game = new Game(restored, { silent: true });
+    // 推演只需要粗排序，跳过动作预览能显著提高同样时间内的 rollout 数
+    const game = new Game(restored, { silent: true, skipPreview: true });
     let actionCount = 0;
     let cutShort = false;
     const responder = async (request: Parameters<typeof fastReply>[0]) => {

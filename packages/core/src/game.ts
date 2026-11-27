@@ -237,6 +237,13 @@ export interface GameOption {
    * 时间。打开后推演速度可以快好几倍。
    */
   silent?: boolean;
+  /**
+   * 跳过动作预览（preview）的沙盒模拟，只保留费用/骰子/合法性计算。
+   *
+   * 给 AI 推演用：rollout 内部只需要"哪个动作更值得选"的粗排序，不需要
+   * 精确的伤害/击杀预览。预览占推演每步 90% 以上的时间，关掉后同预算能多推几倍。
+   */
+  skipPreview?: boolean;
 }
 
 const VOID_1_DICE_REQUIREMENT: DiceRequirement = new Map([[DiceType.Void, 1]]);
@@ -1185,7 +1192,12 @@ export class Game {
     const skipError = (
       ["toleratePreview", "skipPhase"] as ErrorLevel[]
     ).includes(this.option.errorLevel);
-    const previewer = new ActionPreviewer(this.state, who, skipError);
+    const previewer = new ActionPreviewer(
+      this.state,
+      who,
+      skipError,
+      this.option.skipPreview ?? false,
+    );
     return await Promise.all(
       result.map((a) =>
         previewer

@@ -9,14 +9,26 @@
 //   --start 0                      起始局号（断点续跑用）
 //
 // 输出: <out>/shard-<shard>.jsonl + <out>/progress-<shard>.json
-// 行格式: {"s":座位,"w":胜负,"t":回合,"f":[22维特征]}
+// 行格式(v5): {"v":5,"d":[我方牌组索引,对手牌组索引],"s":座位,"w":胜负,"t":回合,"f":命名特征,"x":40维向量,
+//              "c":按打分排序的候选,"ai":选中动作在 c 里的位置,"n":候选总数,
+//              "a":选中动作的全局下标,"l":动作标签,"h":手牌,"e":对手已出牌}
 
 import fs from "node:fs";
 import zlib from "node:zlib";
 import path from "node:path";
-import { CURRENT_VERSION, Game } from "@gi-tcg/core";
+import { CURRENT_VERSION, Game, exposeState } from "@gi-tcg/core";
+import { ActionValidity } from "@gi-tcg/typings";
 import getData from "@gi-tcg/data";
-import { createAi, searchBestAction, stateFeatureMap, stateFeatures, styleOfDeck } from "../dist/index.js";
+import {
+  candidateFeatures,
+  createAi,
+  isPayable,
+  scoreAction,
+  searchBestAction,
+  stateFeatureMap,
+  stateFeatures,
+  styleOfDeck,
+} from "../dist/index.js";
 
 const LIB =
   process.env.GI_DECK_LIB ??
@@ -59,9 +71,10 @@ const data = getData(CURRENT_VERSION);
 const library = JSON.parse(
   fs.readFileSync(options.lib || LIB, "utf8"),
 ).decks;
-const usable = library.filter(
-  (deck) => deck.chars?.length === 3 && deck.cards?.length >= 28,
-);
+// 记住每套牌在库里的原始索引，落到样本里，方便后续统计牌组胜率
+const usable = library
+  .map((deck, index) => ({ deck, index }))
+  .filter(({ deck }) => deck.chars?.length === 3 && deck.cards?.length >= 28);
 
 fs.mkdirSync(options.out, { recursive: true });
 const shardFile = path.join(options.out, `shard-${options.shard}.jsonl.gz`);
@@ -106,36 +119,18 @@ function pickOpponent(rng) {
   return { search: false, blunder: 0.2 };
 }
 
-/** 候选动作特征：类别、费用、目标血量、能否击杀、是否快攻、是否结束 */
-function actionFeatures(action, state, who) {
-  const act = action.action;
-  const enemy = state.players[1 - who];
-  const summary = (action.preview ?? []).reduce(
-    (acc, preview) => {
-      const mutation = preview.mutation;
-      if (mutation?.$case === "damage") {
-        const enemyIds = new Set(enemy.characters.map((c) => c.id));
-        if (enemyIds.has(mutation.value.targetId)) {
-          acc.damage += mutation.value.value;
-          acc.kill += mutation.value.causeDefeated ? 1 : 0;
-        }
-      }
-      return acc;
-    },
-    { damage: 0, kill: 0 },
+/** 给合法且付得起的动作打分并降序排列；AI 只在这个池子里挑，候选池必须和它一致 */
+function rankCandidates(actions, context) {
+  const legal = actions.flatMap((action, index) =>
+    action.validity === ActionValidity.VALID && isPayable(action) ? [index] : [],
   );
-  const cost = (action.requiredCost ?? []).reduce((sum, req) => sum + req.count, 0);
-  const kind = act?.$case ?? "none";
-  const enemyActive = enemy.characters.find((c) => c.id === enemy.activeCharacterId);
-  return {
-    k: kind,
-    cost,
-    dmg: Math.min(summary.damage, 10) / 10,
-    kill: summary.kill > 0 ? 1 : 0,
-    fast: action.isFast ? 1 : 0,
-    tgtHp: Math.max(enemyActive?.variables.health ?? 0, 0) / 10,
-    end: kind === "declareEnd" ? 1 : 0,
-  };
+  const pool = legal.length > 0 ? legal : actions.map((_, index) => index);
+  return pool
+    .map((index) => ({
+      index,
+      score: scoreAction(actions[index], context).score,
+    }))
+    .sort((left, right) => right.score - left.score);
 }
 
 /** 动作标签：类别 + 关键参数（角色 id / 卡牌 id / 技能 id） */
@@ -173,8 +168,12 @@ function mulberry32(seed) {
 
 async function runGame(gameIndex) {
   const rng = mulberry32(options.seed + gameIndex * 7919);
-  const deckA = usable[(gameIndex * 37 + options.shard * 13) % usable.length];
-  const deckB = usable[(gameIndex * 37 + 211 + options.shard * 13) % usable.length];
+  const slotA = usable[(gameIndex * 37 + options.shard * 13) % usable.length];
+  const slotB = usable[(gameIndex * 37 + 211 + options.shard * 13) % usable.length];
+  const deckA = slotA.deck;
+  const deckB = slotB.deck;
+  /** 座位 → 牌组库索引 */
+  const deckIds = [slotA.index, slotB.index];
   const decks = [
     { characters: deckA.chars, cards: deckA.cards },
     { characters: deckB.chars, cards: deckB.cards },
@@ -190,6 +189,8 @@ async function runGame(gameIndex) {
 
   /** 本局记录：{ seat, round, features } */
   const samples = [];
+  // 对手出牌是从动作流里抓的：核心态的 removedEntities 是空的，只能自己记
+  const playedCards = [[], []];
   /** 决策点计数（不能拿 samples.length 当计数，否则第一次采样后长度永远不是 N 的倍数） */
   let decisions = 0;
   for (const seat of [0, 1]) {
@@ -226,34 +227,67 @@ async function runGame(gameIndex) {
       }
       // 只有采样的那一步才需要记动作，避免白算
       const sampled = decisions % options.sample === 0;
+      // scoreAction 吃的是暴露态（player 单数、对手手牌不可见），和核心态 game.state 不是一个东西
+      const scoringState = sampled ? exposeState(seat, game.state) : null;
+      const ranked = sampled
+        ? rankCandidates(request.request.value.action, {
+            who: seat,
+            state: scoringState,
+            data,
+            style: styleOfDeck(decks[seat]),
+          })
+        : null;
       const snapshot = sampled
         ? {
-            // v3：命名特征 + 全部候选的动作特征 + 可见牌信息
+            // v4：命名特征 + 按打分排序的候选动作 + 可见牌信息
             featureMap: stateFeatureMap(game.state, seat),
             vector: stateFeatures(game.state, seat),
             round: game.state.roundNumber,
-            candidates: request.request.value.action
-              .map((action, index) => ({ index, ...actionFeatures(action, game.state, seat) }))
-              .slice(0, 5),
-            candidateCount: request.request.value.action.length,
+            actions: request.request.value.action,
+            scored: ranked,
+            candidateCount: ranked.length,
             myHand: game.state.players[seat].hands.map((card) => card.definition.id),
-            enemyPlayed: game.state.players[1 - seat].removedEntities
-              ?.map((entity) => entity.definition?.id)
-              .filter((id) => typeof id === "number")
-              .slice(-12) ?? [],
+            enemyPlayed: playedCards[1 - seat].slice(-12),
           }
         : null;
       decisions += 1;
       const response = await original(request);
+      {
+        // 无论采不采样，只要打出了行动牌就记下来
+        const body =
+          response?.response?.$case === "action" ? response.response.value : response;
+        const chosenIndex = body?.chosenActionIndex;
+        const played =
+          typeof chosenIndex === "number" ? request.request.value.action[chosenIndex] : undefined;
+        if (played?.action?.$case === "playCard") {
+          playedCards[seat].push(played.action.value.cardDefinitionId);
+        }
+      }
       if (snapshot) {
         // 响应可能是扁平的，也可能包在 { response: { $case, value } } 里，两种都兼容
         const body =
           response?.response?.$case === "action" ? response.response.value : response;
         const chosenIndex = body?.chosenActionIndex;
         const chosen =
-          typeof chosenIndex === "number"
-            ? request.request.value.action[chosenIndex]
-            : undefined;
+          typeof chosenIndex === "number" ? snapshot.actions[chosenIndex] : undefined;
+        const top = snapshot.scored.slice(0, 5);
+        // AI 有时会选打分前 5 之外的动作，不补进去这条样本就没有可用的标签
+        if (chosen && !top.some((item) => item.index === chosenIndex)) {
+          top.push(
+            snapshot.scored.find((item) => item.index === chosenIndex) ?? {
+              index: chosenIndex,
+              score: 0,
+            },
+          );
+        }
+        snapshot.candidates = top.map((item) => ({
+          i: item.index,
+          sc: Math.round(item.score * 1000) / 1000,
+          ...candidateFeatures(snapshot.actions[item.index], game.state, seat),
+        }));
+        snapshot.selected = chosen
+          ? snapshot.candidates.findIndex((item) => item.i === chosenIndex)
+          : -1;
         snapshot.action = chosen ? actionLabel(chosen) : "none";
         snapshot.index = chosenIndex;
         samples.push({ seat, ...snapshot });
@@ -274,7 +308,7 @@ async function runGame(gameIndex) {
   for (const sample of samples) {
     lines.push(
       `${JSON.stringify({
-        v: 3,
+        v: 5,
         s: sample.seat,
         w: winner === sample.seat ? 1 : 0,
         t: sample.round,
@@ -286,7 +320,12 @@ async function runGame(gameIndex) {
         ),
         x: sample.vector.map((value) => Math.round(value * 1000) / 1000),
         c: sample.candidates,
+        // d = [本座位牌组索引, 对手牌组索引]，指向 --lib 那份牌组库
+        d: [deckIds[sample.seat], deckIds[1 - sample.seat]],
         a: sample.index ?? -1,
+        // ai 是选中动作在 c 里的位置：a 是全局下标，可能指向被截掉的候选，不能直接当标签
+        ai: sample.selected ?? -1,
+        n: sample.candidateCount,
         l: sample.action ?? "none",
         h: sample.myHand,
         e: sample.enemyPlayed,
