@@ -347,3 +347,4 @@ cd tools/deckcode
 
 - [BUILD.zh.md](BUILD.zh.md) · [DATA.zh.md](DATA.zh.md) · [ARCHITECTURE.zh.md](ARCHITECTURE.zh.md) · [TESTING.zh.md](TESTING.zh.md)
 - [KNOWN-ISSUES.zh.md](KNOWN-ISSUES.zh.md) · [AI.zh.md](AI.zh.md) · [文档中心](README.md) · [项目首页](../README.md)
+- [MAINTENANCE.zh.md](../docs/MAINTENANCE.zh.md) · [牌组码工具](../tools/deckcode/README.md) · [文档中心](../docs/README.md)

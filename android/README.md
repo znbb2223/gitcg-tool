@@ -138,3 +138,4 @@ Web 侧直接起静态服务更省事，见 `../docs/BUILD.zh.md` 第 3 节（�
 
 - [构建文档](../docs/BUILD.zh.md) · [架构](../docs/ARCHITECTURE.zh.md) · [数据格式](../docs/DATA.zh.md)
 - [用户指南](../docs/USER-GUIDE.zh.md) · [文档中心](../docs/README.md) · [项目总总结](../artifacts/项目总总结-2026-11-28.md)
+- [MAINTENANCE.zh.md](../docs/MAINTENANCE.zh.md) · [牌组码工具](../tools/deckcode/README.md) · [文档中心](../docs/README.md)
