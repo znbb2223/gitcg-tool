@@ -878,8 +878,31 @@ resolve() {
   die "「$tok」匹配到多个：${cand%?}"
 }
 
-b64_char() { s=$ALPH; i=$1; while [ "$i" -gt 0 ]; do s=${s#?}; i=$((i-1)); done; first_char "$s"; }
-b64_val() { ch=$1; i=0; s=$ALPH; while [ -n "$s" ]; do [ "$(first_char "$s")" = "$ch" ] && { printf '%s' "$i"; return 0; }; s=${s#?}; i=$((i+1)); done; return 1; }
+b64_char_set() {
+  case "$1" in
+    0) CH=A;; 1) CH=B;; 2) CH=C;; 3) CH=D;; 4) CH=E;; 5) CH=F;; 6) CH=G;; 7) CH=H;;
+    8) CH=I;; 9) CH=J;; 10) CH=K;; 11) CH=L;; 12) CH=M;; 13) CH=N;; 14) CH=O;; 15) CH=P;;
+    16) CH=Q;; 17) CH=R;; 18) CH=S;; 19) CH=T;; 20) CH=U;; 21) CH=V;; 22) CH=W;; 23) CH=X;;
+    24) CH=Y;; 25) CH=Z;; 26) CH=a;; 27) CH=b;; 28) CH=c;; 29) CH=d;; 30) CH=e;; 31) CH=f;;
+    32) CH=g;; 33) CH=h;; 34) CH=i;; 35) CH=j;; 36) CH=k;; 37) CH=l;; 38) CH=m;; 39) CH=n;;
+    40) CH=o;; 41) CH=p;; 42) CH=q;; 43) CH=r;; 44) CH=s;; 45) CH=t;; 46) CH=u;; 47) CH=v;;
+    48) CH=w;; 49) CH=x;; 50) CH=y;; 51) CH=z;; 52) CH=0;; 53) CH=1;; 54) CH=2;; 55) CH=3;;
+    56) CH=4;; 57) CH=5;; 58) CH=6;; 59) CH=7;; 60) CH=8;; 61) CH=9;; 62) CH=+;; 63) CH=/;;
+  esac
+}
+b64_set() {
+  case "$1" in
+    A) V=0;; B) V=1;; C) V=2;; D) V=3;; E) V=4;; F) V=5;; G) V=6;; H) V=7;;
+    I) V=8;; J) V=9;; K) V=10;; L) V=11;; M) V=12;; N) V=13;; O) V=14;; P) V=15;;
+    Q) V=16;; R) V=17;; S) V=18;; T) V=19;; U) V=20;; V) V=21;; W) V=22;; X) V=23;;
+    Y) V=24;; Z) V=25;; a) V=26;; b) V=27;; c) V=28;; d) V=29;; e) V=30;; f) V=31;;
+    g) V=32;; h) V=33;; i) V=34;; j) V=35;; k) V=36;; l) V=37;; m) V=38;; n) V=39;;
+    o) V=40;; p) V=41;; q) V=42;; r) V=43;; s) V=44;; t) V=45;; u) V=46;; v) V=47;;
+    w) V=48;; x) V=49;; y) V=50;; z) V=51;; 0) V=52;; 1) V=53;; 2) V=54;; 3) V=55;;
+    4) V=56;; 5) V=57;; 6) V=58;; 7) V=59;; 8) V=60;; 9) V=61;; +) V=62;; /) V=63;;
+    *) return 1;;
+  esac
+}
 
 b64_encode() {
   out=""
@@ -888,9 +911,10 @@ b64_encode() {
     [ $rem -ge 2 ] && b2=$2
     [ $rem -ge 3 ] && b3=$3
     n=$((b1*65536 + b2*256 + b3))
-    out="$out$(b64_char $((n/262144%64)))$(b64_char $((n/4096%64)))"
-    if [ $rem -ge 2 ]; then out="$out$(b64_char $((n/64%64)))"; else out="${out}="; fi
-    if [ $rem -ge 3 ]; then out="$out$(b64_char $((n%64)))"; else out="${out}="; fi
+    b64_char_set $((n/262144%64)); out="$out$CH"
+    b64_char_set $((n/4096%64)); out="$out$CH"
+    if [ $rem -ge 2 ]; then b64_char_set $((n/64%64)); out="$out$CH"; else out="${out}="; fi
+    if [ $rem -ge 3 ]; then b64_char_set $((n%64)); out="$out$CH"; else out="${out}="; fi
     if [ $rem -ge 3 ]; then shift 3; else shift $rem; fi
   done
   printf '%s' "$out"
@@ -899,14 +923,14 @@ b64_encode() {
 b64_decode() {
   s=$1; out=""
   while [ -n "$s" ]; do
-    c0=$(first_char "$s"); s=${s#?}
-    c1=$(first_char "$s"); s=${s#?}
-    c2=$(first_char "$s"); s=${s#?}
-    c3=$(first_char "$s"); s=${s#?}
-    v0=$(b64_val "$c0") || die "非法 base64 字符: $c0"
-    v1=$(b64_val "$c1") || die "非法 base64 字符: $c1"
-    if [ "$c2" = "=" ]; then v2=0; nb=1; else v2=$(b64_val "$c2") || die "非法 base64 字符: $c2"; nb=2; fi
-    if [ "$c3" = "=" ] || [ -z "$c3" ]; then v3=0; else v3=$(b64_val "$c3") || die "非法 base64 字符: $c3"; nb=3; fi
+    c0=${s%"${s#?}"}; s=${s#?}
+    c1=${s%"${s#?}"}; s=${s#?}
+    c2=${s%"${s#?}"}; s=${s#?}
+    c3=${s%"${s#?}"}; s=${s#?}
+    b64_set "$c0" || die "非法 base64 字符: $c0"; v0=$V
+    b64_set "$c1" || die "非法 base64 字符: $c1"; v1=$V
+    if [ "$c2" = "=" ]; then v2=0; nb=1; else b64_set "$c2" || die "非法 base64 字符: $c2"; v2=$V; nb=2; fi
+    if [ "$c3" = "=" ] || [ -z "$c3" ]; then v3=0; else b64_set "$c3" || die "非法 base64 字符: $c3"; v3=$V; nb=3; fi
     n=$((v0*262144 + v1*4096 + v2*64 + v3))
     out="$out $((n/65536%256))"
     [ $nb -ge 2 ] && out="$out $((n/256%256))"
@@ -915,10 +939,11 @@ b64_decode() {
   printf '%s' "${out# }"
 }
 
+
 lower() {
   s=$1; out=""
   while [ -n "$s" ]; do
-    c=$(first_char "$s"); s=${s#?}
+    c=${s%"${s#?}"}; s=${s#?}
     case "$c" in
       A) c=a;; B) c=b;; C) c=c;; D) c=d;; E) c=e;; F) c=f;; G) c=g;; H) c=h;;
       I) c=i;; J) c=j;; K) c=k;; L) c=l;; M) c=m;; N) c=n;; O) c=o;; P) c=p;;
@@ -932,7 +957,7 @@ lower() {
 strip_plus() {
   s=$1; out=""
   while [ -n "$s" ]; do
-    c=$(first_char "$s"); s=${s#?}
+    c=${s%"${s#?}"}; s=${s#?}
     case "$c" in +|/) ;; *) out="$out$c";; esac
   done
   printf '%s' "$out"
