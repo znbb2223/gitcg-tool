@@ -72,25 +72,24 @@
 
 ## 三、界面预览
 
-<table>
-<tr>
-<td align="center"><img src="./docs/screenshots/01-hub-portrait-20x9.png" width="150"><br/><sub>首页（20:9 竖屏）</sub></td>
-<td align="center"><img src="./docs/screenshots/02-deck-library-portrait-20x9.png" width="150"><br/><sub>牌组库</sub></td>
-<td align="center"><img src="./docs/screenshots/03-deck-builder-portrait-20x9.png" width="150"><br/><sub>组牌器</sub></td>
-<td align="center"><img src="./docs/screenshots/04-lab-portrait-20x9.png" width="150"><br/><sub>卡组实验室</sub></td>
-</tr>
-</table>
+> 全部截图按 **2400×1080（20:9）** 重新渲染：竖屏页面配文字说明，对局页为完整横屏画面。
 
 <table>
 <tr>
-<td align="center" width="50%"><img src="./docs/screenshots/07-simulator-landscape-20x9.png" width="380"><br/><sub>对局模拟器（20:9 横屏）</sub></td>
-<td align="center" width="50%"><img src="./docs/screenshots/05-state-editor-landscape-20x9.png" width="380"><br/><sub>摆盘器（20:9 横屏）</sub></td>
+<td width="50%"><img src="./docs/screenshots/01-hub-2400x1080.png"><br/><sub>首页 · 六大入口，离线可用</sub></td>
+<td width="50%"><img src="./docs/screenshots/02-deck-library-2400x1080.png"><br/><sub>牌组库 · 4,557 套社区牌组</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="./docs/screenshots/05-state-editor-portrait-20x9.png" width="150"><br/><sub>摆盘器（竖屏）</sub></td>
-<td align="center"><img src="./docs/screenshots/06-about-portrait-20x9.png" width="150"><br/><sub>关于页</sub></td>
+<td><img src="./docs/screenshots/03-deck-builder-2400x1080.png"><br/><sub>组牌器 · 3 角色 + 30 牌，实时合法性</sub></td>
+<td><img src="./docs/screenshots/04-lab-2400x1080.png"><br/><sub>卡组实验室 · 穷举克制牌组</sub></td>
+</tr>
+<tr>
+<td><img src="./docs/screenshots/05-state-editor-2400x1080.png"><br/><sub>摆盘器 · 自由编辑任意局面</sub></td>
+<td><img src="./docs/screenshots/06-about-2400x1080.png"><br/><sub>关于 · 开源、踩坑与致谢</sub></td>
 </tr>
 </table>
+
+<img src="./docs/screenshots/07-game-2400x1080.png" width="100%"><br/><sub>对局模拟器 · 角色出战选择（20:9 横屏）</sub>
 
 ## 四、整体结构
 

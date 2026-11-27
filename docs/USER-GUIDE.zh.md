@@ -6,7 +6,7 @@
 
 ## 1. 首页
 
-![首页](./screenshots/01-hub-portrait-20x9.png)
+![首页](./screenshots/01-hub-2400x1080.png)
 
 六个入口，一屏点完。顶部是版本号，右上角齿轮进设置。
 
@@ -22,7 +22,7 @@
 3. 选好双方牌组（或点「随机」）；
 4. 点「开始对局」。
 
-![对局界面](./screenshots/07-simulator-landscape-20x9.png)
+![对局界面](./screenshots/07-game-2400x1080.png)
 
 - 中间是双方角色区，下面是手牌和骰子；
 - 点角色/技能/手牌出行动，右上角是回合与阶段；
@@ -30,7 +30,7 @@
 
 ## 3. 牌组库
 
-![牌组库](./screenshots/02-deck-library-portrait-20x9.png)
+![牌组库](./screenshots/02-deck-library-2400x1080.png)
 
 - 顶部筛选：流派、元素、来源、作者、卡牌；
 - 每张卡片显示：角色、胜率、对局数、打法标签；
@@ -39,7 +39,7 @@
 
 ## 4. 组牌器
 
-![组牌器](./screenshots/03-deck-builder-portrait-20x9.png)
+![组牌器](./screenshots/03-deck-builder-2400x1080.png)
 
 1. 先选 3 个角色（不能重复）；
 2. 再挑 30 张行动牌（可按费用/元素/类型筛选）；
@@ -64,7 +64,7 @@
 
 ## 5. 卡组实验室
 
-![实验室](./screenshots/04-lab-portrait-20x9.png)
+![实验室](./screenshots/04-lab-2400x1080.png)
 
 1. 粘贴对手的牌组码（或从牌组库选一套）；
 2. 设置「每副候选对局数」（2~30，默认 6）；
@@ -73,9 +73,9 @@
 
 ## 6. 摆盘器
 
-![摆盘器（竖屏）](./screenshots/05-state-editor-portrait-20x9.png)
+![摆盘器（竖屏）](./screenshots/05-state-editor-2400x1080.png)
 
-![摆盘器（横屏）](./screenshots/05-state-editor-landscape-20x9.png)
+![摆盘器（横屏）](./screenshots/05-state-editor-2400x1080.png)
 
 1. 拖拽摆放双方手牌、牌库、骰子、角色位置；
 2. 摆好点「完成摆盘 → 开局」；
@@ -91,7 +91,7 @@
 
 ## 8. 关于页
 
-![关于](./screenshots/06-about-portrait-20x9.png)
+![关于](./screenshots/06-about-2400x1080.png)
 
 版本号、更新日志、支持范围、许可说明都在这里。
 
