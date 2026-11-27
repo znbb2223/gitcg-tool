@@ -1,4 +1,12 @@
-# 安卓壳
+<div align="center">
+
+# 安卓壳（APK 打包）
+
+**WebView + 资源拦截 + 零权限**
+
+[首页](../README.md) · [构建文档](../docs/BUILD.zh.md) · [文档中心](../docs/README.md) · [项目总总结](../artifacts/项目总总结-2026-11-28.md)
+
+</div>
 
 把 `packages/standalone` 的 Web 产物装进 WebView，做成可离线安装的 APK。
 
@@ -122,3 +130,11 @@ Web 侧直接起静态服务更省事，见 `../docs/BUILD.zh.md` 第 3 节（�
 | `src/AndroidManifest.xml` | 版本号、屏幕方向、零权限声明 |
 | `build.sh` | aapt + d8 + zipalign + apksigner 一键打包（路径可用环境变量覆盖） |
 | `dev-docs/` | 构建、数据更新、交接文档 |
+
+
+---
+
+## 相关文档
+
+- [构建文档](../docs/BUILD.zh.md) · [架构](../docs/ARCHITECTURE.zh.md) · [数据格式](../docs/DATA.zh.md)
+- [用户指南](../docs/USER-GUIDE.zh.md) · [文档中心](../docs/README.md) · [项目总总结](../artifacts/项目总总结-2026-11-28.md)

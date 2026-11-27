@@ -10,6 +10,15 @@
 ![platform](https://img.shields.io/badge/platform-Android%2010%2B%20%7C%20Web-green)
 ![no network](https://img.shields.io/badge/network-none-important)
 
+**快速导航**：
+[用户指南](./docs/USER-GUIDE.zh.md) ·
+[文档索引](./docs/README.md) ·
+[AI 实现详解](./docs/AI-实现详解.zh.md) ·
+[架构](./docs/ARCHITECTURE.zh.md) ·
+[构建](./docs/BUILD.zh.md) ·
+[安卓壳](./android/README.md) ·
+[项目总总结](./artifacts/项目总总结-2026-11-28.md)
+
 </div>
 
 > 基于开源项目 [piovium/genius-invokation](https://github.com/piovium/genius-invokation) 二次开发，

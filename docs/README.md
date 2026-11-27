@@ -1,6 +1,16 @@
-# 文档索引
+<div align="center">
 
-## 给使用者
+# 文档中心
+
+**使用 · 开发 · AI · 数据 · 上游资料**
+
+[首页](../README.md) · [用户指南](./USER-GUIDE.zh.md) · [安装](./INSTALL.zh.md) · [术语表](./GLOSSARY.zh.md) · [AI 详解](./AI-实现详解.zh.md) · [项目总总结](../artifacts/项目总总结-2026-11-28.md)
+
+</div>
+
+> 状态：2026-11-28 收尾。使用类文档可直接上手；开发类文档对应仓库当前代码。
+
+## 一、给使用者
 
 | 文档 | 内容 |
 |---|---|
@@ -11,7 +21,7 @@
 | [INSTALL.zh.md](./INSTALL.zh.md) | 安装与系统要求 |
 | [GLOSSARY.zh.md](./GLOSSARY.zh.md) | 术语表 |
 
-## 给开发者
+## 二、给开发者
 
 | 文档 | 内容 |
 |---|---|
@@ -31,7 +41,7 @@
 | [ROADMAP.zh.md](./ROADMAP.zh.md) | 路线图 |
 | [development/](./development/README.md) | 上游维护者的数据与查询引擎文档 |
 
-## 上游文档
+## 三、上游文档
 
 `docs/development/` 下是 gi-tcg 上游的引擎开发文档（数据生成、Event/Query API、
 状态机设计等），改动引擎层前建议先读。
