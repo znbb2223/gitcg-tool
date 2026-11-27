@@ -841,12 +841,25 @@ xjp
 yaoi
 yiffy'
 
+
+# 启动时建表：S_<sid>=id  I_<id>=sid  NM_<id>=name  ALL_IDS=...
+S_="" I_="" NM_="" ALL_IDS=""
+while IFS='|' read -r _id _sid _name; do
+  [ -n "$_id" ] || continue
+  eval "S_$_sid=\$_id"
+  eval "I_$_id=\$_sid"
+  eval "NM_$_id=\"\$_name\""
+  ALL_IDS="$ALL_IDS $_id"
+done <<EOF
+$TABLE
+EOF
+
 die() { printf '错误: %s\n' "$*" >&2; exit 1; }
 first_char() { printf '%.1s' "$1"; }
 
-by_sid() { printf '%s\n' "$TABLE" | while IFS='|' read -r id sid name; do [ "$sid" = "$1" ] && { printf '%s' "$id"; break; }; done; }
-by_id()  { printf '%s\n' "$TABLE" | while IFS='|' read -r id sid name; do [ "$id" = "$1" ] && { printf '%s' "$sid"; break; }; done; }
-name_of(){ printf '%s\n' "$TABLE" | while IFS='|' read -r id sid name; do [ "$id" = "$1" ] && { printf '%s' "$name"; break; }; done; }
+by_sid() { case "$1" in ''|*[!0-9]*) return 1;; esac; eval "v=\$S_$1"; printf '%s' "${v:-}"; }
+by_id()  { case "$1" in ''|*[!0-9]*) return 1;; esac; eval "v=\$I_$1"; printf '%s' "${v:-}"; }
+name_of(){ case "$1" in ''|*[!0-9]*) printf '%s' "?"; return 0;; esac; eval "v=\$NM_$1"; printf '%s' "${v:-<未知>}"; }
 exact_name(){ printf '%s\n' "$TABLE" | while IFS='|' read -r id sid name; do [ "$name" = "$1" ] && printf '%s\n' "$id"; done; }
 part_name(){ printf '%s\n' "$TABLE" | while IFS='|' read -r id sid name; do case "$name" in *"$1"*) printf '%s\n' "$id";; esac; done; }
 
@@ -1115,8 +1128,8 @@ cmd_batch() {
 CUR=""
 init_cur() { CUR=""; i=0; while [ $i -lt 33 ]; do CUR="$CUR -"; i=$((i+1)); done; CUR=${CUR# }; }
 cur_filled() { n=0; for v in $CUR; do [ "$v" != "-" ] && n=$((n+1)); done; echo $n; }
-get_slot() { idx=$1; i=1; for v in $CUR; do [ $i -eq $idx ] && { printf '%s' "$v"; return; }; i=$((i+1)); done; }
-set_slot() { idx=$1; val=$2; out=""; i=1; for v in $CUR; do if [ $i -eq $idx ]; then out="$out $val"; else out="$out $v"; fi; i=$((i+1)); done; CUR=${out# }; }
+get_slot() { _idx=$1; _k=1; for _v in $CUR; do [ $_k -eq "$_idx" ] && { printf '%s' "$_v"; return; }; _k=$((_k+1)); done; }
+set_slot() { _idx=$1; _val=$2; _out=""; _k=1; for _v in $CUR; do if [ $_k -eq "$_idx" ]; then _out="$_out $_val"; else _out="$_out $_v"; fi; _k=$((_k+1)); done; CUR=${_out# }; }
 show_cur() {
   [ "$(cur_filled)" -eq 0 ] && { echo "（当前牌组为空）"; return; }
   i=1
@@ -1158,17 +1171,17 @@ editor_menu() {
          [ $ok -eq 1 ] && echo "已填充 30 张行动牌" ;;
       4) card=$(ask "行动牌: ") || continue; a=$(ask "角色1: ") || continue; b=$(ask "角色2: ") || continue; d=$(ask "角色3: ") || continue
          ca=$(resolve "$card") && aa=$(resolve "$a") && ab=$(resolve "$b") && ad=$(resolve "$d") || continue
-         i=1; for v in $CUR; do if [ $i -eq 1 ]; then set_slot 1 "$aa"; elif [ $i -eq 2 ]; then set_slot 2 "$ab"; elif [ $i -eq 3 ]; then set_slot 3 "$ad"; else set_slot $i "$ca"; fi; i=$((i+1)); done
+         _n=1; while [ $_n -le 33 ]; do if [ $_n -eq 1 ]; then set_slot 1 "$aa"; elif [ $_n -eq 2 ]; then set_slot 2 "$ab"; elif [ $_n -eq 3 ]; then set_slot 3 "$ad"; else set_slot $_n "$ca"; fi; _n=$((_n+1)); done
          echo "已生成：3 角色 + 30 张同卡" ;;
       5) ch=$(ask "角色: ") || continue; cd=$(ask "行动牌: ") || continue
          cc=$(resolve "$ch") && dd=$(resolve "$cd") || continue
-         i=1; for v in $CUR; do if [ $i -le 3 ]; then set_slot $i "$cc"; else set_slot $i "$dd"; fi; i=$((i+1)); done
+         _n=1; while [ $_n -le 33 ]; do if [ $_n -le 3 ]; then set_slot $_n "$cc"; else set_slot $_n "$dd"; fi; _n=$((_n+1)); done
          echo "已生成：3 个同角色 + 30 张同卡" ;;
       6) print_cur_code ;;
       7) init_cur; echo "已清空" ;;
       8) code=$(ask "牌组码: ") || continue
          ids=$(decode_deck "$code") || continue
-         i=0; for v in $ids; do set_slot $((i+1)) "$v"; i=$((i+1)); done
+         _n=0; for _v in $ids; do set_slot $((_n+1)) "$_v"; _n=$((_n+1)); done
          echo "已载入"; show_cur ;;
       0) return ;;
     esac
