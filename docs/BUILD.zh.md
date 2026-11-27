@@ -66,7 +66,15 @@ rm -rf dist-lab && mv dist-lab.new dist-lab
 ```
 
 `build.sh` 做的事：`aapt package` 资源 → `d8` 编译 dex → 打包 zip →
-`zipalign` → `apksigner sign`（自带 debug keystore）。
+`zipalign` → `apksigner sign`（首次运行会在 `android/` 下生成 keystore，**务必备份**，
+换签名会导致无法覆盖安装）。
+
+路径都可用环境变量覆盖，换机器不必改脚本：
+`ANDROID_SDK`、`ANDROID_PLATFORM`（默认 23）、`BUILD_TOOLS`（含 `d8`）、`WEB`、`OUT`、`KEYSTORE`、`KS_PASS`。
+缺依赖时脚本会在第一步直接报错并提示。
+
+打完建议按 [../android/README.md](../android/README.md) 第 5 节做一次校验
+（包名/版本号、入口页、签名、AI worker 是否带上 `realisticHidden`）。
 
 ### 版本号（两处必须同时改）
 
