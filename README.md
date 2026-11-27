@@ -93,67 +93,60 @@
 
 ## 四、整体结构
 
-```mermaid
-flowchart LR
-  subgraph 手机端 APK
-    W[WebView] --> H[hub 首页]
-    H --> G[模拟器 app.html]
-    H --> L[牌组库]
-    H --> B[组牌器]
-    H --> S[摆盘器]
-    H --> A[关于]
-  end
-  G --> C[core 引擎]
-  G --> AI[ai 搜索]
-  L --> D[(deck-library.json)]
-  AI --> E[(经验库)]
-  S --> C
-  T[电脑训练器] -->|导入经验包| E
-```
+- 手机端 APK：`WebView` → `hub 首页` → 模拟器 / 牌组库 / 组牌器 / 摆盘器 / 关于；
+- 模拟器依赖 `core 引擎` 与 `ai 搜索`；牌组库依赖 `deck-library.json`；
+- AI 搜索读取 `经验库`；摆盘器复用 `core` 引擎；
+- 电脑训练器通过「导入经验包」把结果写回 `经验库`。
+
 
 ## 五、目录结构
 
-```
-packages/                  pnpm monorepo
-  core/                    对局引擎（规则、状态机、reducer）
-  ai/                      AI：搜索、进化、经验库、牌组池
-  data/                    卡牌与角色数据
-  web-ui-core/             对局界面组件（棋盘、手牌、骰子、技能面板）
-  deck-builder/            组牌器组件
-  state-editor/            摆盘器组件
-  standalone/              独立 Web 应用入口（hub / 模拟器 / 实验室 / 牌组库）
-android/                   安卓 WebView 壳
-  src/                     MainActivity、资源拦截、设置页
-  build.sh                 一键打包脚本
-  dev-docs/                开发资料（构建、数据更新、交接）
-trainer/                   电脑端 AI 训练器
-promo/                     宣传片工程（Motion Canvas）
-docs/                      文档
-```
+| 目录 | 作用 |
+|---|---|
+| `packages/` | pnpm monorepo |
+| `core/` | 对局引擎（规则、状态机、reducer） |
+| `ai/` | AI：搜索、进化、经验库、牌组池 |
+| `data/` | 卡牌与角色数据 |
+| `web-ui-core/` | 对局界面组件（棋盘、手牌、骰子、技能面板） |
+| `deck-builder/` | 组牌器组件 |
+| `state-editor/` | 摆盘器组件 |
+| `standalone/` | 独立 Web 应用入口（hub / 模拟器 / 实验室 / 牌组库） |
+| `android/` | 安卓 WebView 壳（MainActivity、资源拦截、设置页、build.sh） |
+| `trainer/` | 电脑端 AI 训练器 |
+| `promo/` | 宣传片工程（Motion Canvas） |
+| `docs/` | 文档 |
+
 
 ## 六、快速开始
 
 ### 网页版（开发调试）
 
-```bash
+bash
+# 安装依赖（copy 模式，避免硬链接失败）
 pnpm install --config.package-import-method=copy
+# 构建资源清单
 pnpm --filter @gi-tcg/assets-manager build
+# 构建对局界面组件
 pnpm --filter @gi-tcg/web-ui-core build
+# 构建组牌器组件
 pnpm --filter @gi-tcg/deck-builder build
+# 构建独立应用（产物在 packages/standalone/dist）
 pnpm --filter @gi-tcg/standalone build
 
 # 本地起服务看效果
 cd packages/standalone/dist && python3 -m http.server 8899
 # 首页    http://127.0.0.1:8899/hub.html
 # 模拟器  http://127.0.0.1:8899/app.html
-```
+
 
 ### 安卓 APK
 
-```bash
+bash
+# 把 Web 产物复制到安卓壳工程（目录名必须是 dist-lab）
 cp -r packages/standalone/dist /path/to/android/dist-lab
-cd android && ./build.sh     # 需要 android-sdk、d8、apksigner
-```
+# 进入安卓目录并打包（需要 android-sdk、d8、apksigner）
+cd android && ./build.sh
+
 
 详细步骤、坑与版本号位置见 [docs/BUILD.zh.md](./docs/BUILD.zh.md)。
 
