@@ -182,6 +182,7 @@ cd android && ./build.sh     # 需要 android-sdk、d8、apksigner
 | [docs/INSTALL.zh.md](./docs/INSTALL.zh.md) | 安装、系统要求、卸载与重置 |
 | [docs/GLOSSARY.zh.md](./docs/GLOSSARY.zh.md) | 术语表（对局 / 工具 / AI） |
 | [docs/AI.zh.md](./docs/AI.zh.md) | **AI 原理、强度定位、强度旋钮、局限** |
+| [docs/AI-实现详解.zh.md](./docs/AI-实现详解.zh.md) | **AI 全景实现详解**：代码走读、搜索/价值/策略/DMC、术语表、44 维特征 |
 | [docs/AI-ROADMAP.zh.md](./docs/AI-ROADMAP.zh.md) | **14 个 AI 组件路线图、阶段门槛、成本** |
 | [docs/KNOWN-ISSUES.zh.md](./docs/KNOWN-ISSUES.zh.md) | **已知问题与限制、规避方式** |
 | [CHANGELOG.md](./CHANGELOG.md) | 版本更新日志 |
