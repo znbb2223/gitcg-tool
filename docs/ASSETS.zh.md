@@ -8,9 +8,13 @@
 上游脚本位置：`packages/standalone/scripts/`
 
 ```bash
+# 下载卡牌素材（卡面、图标、UI 等）到 public/assets-local
 node packages/standalone/scripts/download-assets.mjs
+# 下载数据文件（卡牌定义、技能、标签等）
 node packages/standalone/scripts/download-datum.mjs
+# 下载完整素材包（批量拉取）
 node packages/standalone/scripts/download-full.mjs
+# 单独下载卡面图
 node packages/standalone/scripts/download-cardface.mjs
 ```
 
@@ -31,16 +35,19 @@ node packages/standalone/scripts/download-cardface.mjs
 脚本位置：`packages/ai/scripts/`
 
 ```bash
-# 抓牌组广场（按分区/标签）
+# 抓牌组广场：先抓分区/标签列表
 node packages/ai/scripts/scrape-cardsquare-labels.mjs
+# 再按标签抓牌组
 node packages/ai/scripts/scrape-cardsquare.mjs
-# 抓米游社（关键词搜索）
+# 抓米游社：按关键词搜索
 node packages/ai/scripts/scrape-miyoushe.mjs
-# 补全说明与作者
+# 补全牌组说明与作者信息（广场）
 node packages/ai/scripts/enrich-cardsquare-details.mjs
+# 补全米游社帖子详情
 node packages/ai/scripts/enrich-miyoushe-posts.mjs
 # 生成成品：牌组库 + 索引 + 筛选元数据
 node packages/ai/scripts/build-decklib.mjs
+# 从牌组库生成 AI 用的牌库先验
 node packages/ai/scripts/gen-library-from-decklib.mjs
 ```
 
@@ -56,6 +63,7 @@ node packages/ai/scripts/gen-library-from-decklib.mjs
 摆盘器用的随机开局牌组：
 
 ```bash
+# 生成 AI 牌库先验（从牌组库统计）
 node packages/ai/scripts/gen-library.mjs
 ```
 
@@ -64,9 +72,12 @@ node packages/ai/scripts/gen-library.mjs
 ## 4. 训练经验种子
 
 ```bash
-node packages/ai/scripts/selfplay.mjs 20        # 先跑自对弈
-node packages/ai/scripts/evolve.mjs 200 learned # 进化训练
-node packages/ai/scripts/gen-experience-seed.mjs  # 导出经验种子
+# 先跑 20 局自对弈，更新经验库
+node packages/ai/scripts/selfplay.mjs 20
+# 进化训练 200 轮，读 learned 数据
+node packages/ai/scripts/evolve.mjs 200 learned
+# 导出经验种子（可打进 App）
+node packages/ai/scripts/gen-experience-seed.mjs
 ```
 
 产物：`packages/ai/docs/learning.json` → 编译进 `packages/ai/src/data/experience-seed.ts`。

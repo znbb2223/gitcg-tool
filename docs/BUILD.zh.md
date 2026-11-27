@@ -17,15 +17,20 @@
 | 磁盘 | ≥ 3GB 空闲 | Web 产物约 240MB、APK 约 150MB |
 
 ```bash
+# 打印 Node / pnpm / Python / Java 版本（对照第 0 节要求）
 node -v && pnpm -v && python3 -V && java -version 2>&1 | head -1
+# 检查 Android 打包工具是否在 PATH
 which aapt zipalign apksigner
+# 检查 android.jar 是否存在（缺了会打包失败）
 ls "$ANDROID_SDK/platforms/android-23/android.jar" 2>/dev/null || echo "缺 android.jar"
 ```
 
 ## 1. 获取代码与依赖
 
 ```bash
+# 克隆仓库并进入目录
 git clone <仓库地址> && cd gitcg-tool
+# 安装依赖：copy 模式，避免硬链接失败
 pnpm install --config.package-import-method=copy
 ```
 
@@ -49,10 +54,14 @@ pnpm install --config.package-import-method=copy
 ## 3. 构建 Web（顺序不能乱）
 
 ```bash
-pnpm --filter @gi-tcg/assets-manager build   # 1) 资源清单
-pnpm --filter @gi-tcg/web-ui-core build      # 2) 对局界面组件
-pnpm --filter @gi-tcg/deck-builder build     # 3) 组牌器组件
-pnpm --filter @gi-tcg/standalone build       # 4) 独立应用（最后）
+# 1) 构建资源清单（必须最先）
+pnpm --filter @gi-tcg/assets-manager build
+# 2) 构建对局界面组件
+pnpm --filter @gi-tcg/web-ui-core build
+# 3) 构建组牌器组件
+pnpm --filter @gi-tcg/deck-builder build
+# 4) 构建独立应用（最后一步，产物在 dist）
+pnpm --filter @gi-tcg/standalone build
 ```
 
 顺序错误的典型报错：`Cannot find module '@gi-tcg/web-ui-core'` 或类型文件缺失。
@@ -65,6 +74,7 @@ pnpm --filter @gi-tcg/standalone build       # 4) 独立应用（最后）
 ## 4. 本地运行 / 预览
 
 ```bash
+# 进入产物目录并起本地静态服务器（浏览器打开 8899/hub.html）
 cd packages/standalone/dist && python3 -m http.server 8899
 ```
 
@@ -84,11 +94,14 @@ cd packages/standalone/dist && python3 -m http.server 8899
 ```bash
 # 1) 把 Web 产物放进安卓壳工程（目录名必须是 dist-lab）
 cd android
+# 清掉旧产物并复制新产物
 rm -rf dist-lab && cp -r ../packages/standalone/dist dist-lab
 
 # 2) 对调入口（关键！）
-mv dist-lab/index.html dist-lab/app.html      # 模拟器 → app.html
-mv dist-lab/hub.html   dist-lab/index.html    # 首页 → index.html
+# 模拟器页面改名为 app.html
+mv dist-lab/index.html dist-lab/app.html
+# 首页改名为 index.html
+mv dist-lab/hub.html   dist-lab/index.html
 
 # 3) 打包 + 签名
 ./build.sh
@@ -105,12 +118,18 @@ zip + `zipalign` → `apksigner sign`。
 ### 校验（每次都要）
 
 ```bash
+# 进入 APK 产物目录
 cd android/build
-aapt dump badging gitcg.apk | head -2                 # 包名 / versionCode / versionName
+# 看包名 / versionCode / versionName
+aapt dump badging gitcg.apk | head -2
+# 确认 Web 入口文件已打进 APK
 unzip -l gitcg.apk | grep -E "assets/web/(index|app)\.html"
+# 校验签名证书
 apksigner verify --print-certs gitcg.apk | head -2
+# 找到搜索 worker 文件
 W=$(unzip -l gitcg.apk | grep -o "assets/web/assets/search.worker-[^\"]*\.js" | head -1)
-unzip -p gitcg.apk "$W" | grep -c realisticHidden      # 期望 1
+# 确认隐藏信息修复已包含（期望输出 1）
+unzip -p gitcg.apk "$W" | grep -c realisticHidden
 ```
 
 ### 签名与升级
