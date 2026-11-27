@@ -43,6 +43,13 @@ export {
   type ShieldHit,
 } from "./evaluate";
 export {
+  dmcScoreCandidates,
+  pickDmcAction,
+  type DmcChoice,
+  type DmcOptions,
+  type DmcWeights,
+} from "./dmc";
+export {
   actionKey,
   precomputeLine,
   takeCacheHitCount,

@@ -49,8 +49,10 @@ import {
   characterWeights,
   createAi,
   createLearning,
+  pickDmcAction,
   recordGame,
   styleOfDeck,
+  type PolicyWeights,
 } from "@gi-tcg/ai";
 import { loadLearning, saveLearning } from "./learning-storage";
 import { sortCardsForShare } from "./deck-order";
@@ -61,6 +63,24 @@ import { SearchClient, searchParallel } from "./search-client";
 import mergeErrorCause from "merge-error-cause";
 
 export type LocalPlayMode = "pvp" | "ai" | "aiai";
+
+/**
+ * DMC 权重按 URL 缓存；加载失败返回 null。
+ * 调用方拿到 null 时 `selectAction` 返回 null，AiPlayer 会自动回退启发式。
+ */
+const dmcWeightsCache = new Map<string, Promise<PolicyWeights | null>>();
+
+function loadDmcWeights(url: string): Promise<PolicyWeights | null> {
+  const cached = dmcWeightsCache.get(url);
+  if (cached) {
+    return cached;
+  }
+  const pending = fetch(url)
+    .then((response) => (response.ok ? (response.json() as Promise<PolicyWeights>) : null))
+    .catch(() => null);
+  dmcWeightsCache.set(url, pending);
+  return pending;
+}
 
 
 
@@ -599,9 +619,11 @@ export function StandaloneParent(props: StandaloneParentProps) {
   const createAiFor = (who: 0 | 1, game: Game, deck: Deck) => {
     const saved = readAiSettings();
     const aiFlags = loadAiFlags();
+    const style = saved?.style === "random" ? "random" : (saved?.style ?? styleFor(deck));
+    const dmcModel = aiFlags.dmc?.enabled ? aiFlags.dmc.model : null;
     return createAi({
       who,
-      style: saved?.style === "random" ? "random" : (saved?.style ?? styleFor(deck)),
+      style,
       blunderRate: saved?.blunderRate ?? props.aiBlunderRate ?? 0,
       weights: (saved.weights ?? props.aiWeights) as never,
       cardPriors: cardPriorsFromLearning(),
@@ -611,7 +633,20 @@ export function StandaloneParent(props: StandaloneParentProps) {
       // 让评分能分辨"只能打破的盾"和"会自己到期的盾"
       data: getData(props.version),
       log: import.meta.env.DEV ? console.debug : undefined,
-      selectAction: props.aiThinking && loadAiFlags().search.enabled
+      selectAction: dmcModel
+        ? async (request) => {
+            const weights = await loadDmcWeights(dmcModel);
+            if (!weights) {
+              return null;
+            }
+            return pickDmcAction(weights, request.action, game.state, {
+              who,
+              data: getData(props.version),
+              // "random" 是 AiPlayer 的随机风格，DMC 只认三种具体风格
+              style: style === "random" ? undefined : style,
+            });
+          }
+        : props.aiThinking && aiFlags.search.enabled
         ? async (request, context) => {
             const outcome = await searchParallel({
               version: props.version,

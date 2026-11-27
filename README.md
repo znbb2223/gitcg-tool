@@ -15,6 +15,9 @@
 > 基于开源项目 [piovium/genius-invokation](https://github.com/piovium/genius-invokation) 二次开发，
 > 遵循 **AGPL-3.0**，来源与美术版权声明见 [NOTICE.md](./NOTICE.md)。
 
+> **项目状态（2026-11-28）**：工具功能已完成，**AI 研究线已封存**（不再迭代，仅保留搜索版 AI）。
+> 总总结见 [artifacts/项目总总结-2026-11-28.md](./artifacts/项目总总结-2026-11-28.md)。
+
 ---
 
 ## 一、这是什么
@@ -196,12 +199,15 @@ cd android && ./build.sh     # 需要 android-sdk、d8、apksigner
 
 **Q：AI 有多强？**
 诚实定位：不比熟练玩家强，靠搜索预算和经验库堆出来的稳定度；
-胜率数据来自自我对弈，不含人类对局。
+胜率数据来自自我对弈，不含人类对局。**AI 研究线已于 2026-11-28 封存**，
+最终结论见 [AI 终结报告](./artifacts/ai/AI-终结报告-2026-11-28.md)。
 
 **Q：AI 到底什么水平？**
 比随便打强，不如熟练玩家；原理、强度旋钮和局限都写在
 [docs/AI.zh.md](./docs/AI.zh.md)，已知问题见 [docs/KNOWN-ISSUES.zh.md](./docs/KNOWN-ISSUES.zh.md)。
 实测数据、失败清单与复现方法见 [artifacts/ai/README.md](./artifacts/ai/README.md)。
+现状：搜索版对启发式约 60%，对熟练玩家仍处下风；DMC 尝试（0.1ms/手）只到 150ms 搜索水平，
+未达上线门槛，已封存。
 
 **Q：能在电脑上用吗？**
 可以，用网页版（`pnpm --filter @gi-tcg/standalone dev`）或构建后本地起服务。

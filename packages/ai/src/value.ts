@@ -25,6 +25,7 @@
 import { DiceType } from "@gi-tcg/core";
 import type { GameState, PlayerState } from "@gi-tcg/core";
 import { EXPERIENCE_SEED } from "./data/experience-seed";
+import { DECK_LIBRARY } from "./data/deck-library";
 
 /** 归一化后的局面特征，顺序固定，查表与神经网络共用 */
 /** 基础 22 维特征 */
@@ -146,6 +147,50 @@ function deckPriorOf(player: PlayerState): number {
     : 0.5;
   const value = Math.max(-1, Math.min(1, (average - 0.5) * 4));
   deckPriorCache.set(pile, value);
+  return value;
+}
+
+/**
+ * 对手牌组强度估计：**只用公开信息**（场上三个角色）。
+ *
+ * 不能读对手的 `initialPile`——那是隐藏信息。这里取牌组库里同角色组合的套牌，
+ * 用它们携带卡牌的胜率先验取平均；同队套牌不存在时退化为只看角色先验。
+ */
+const guessedDeckPriorCache = new Map<string, number>();
+
+function guessedDeckPriorOf(characters: readonly number[]): number {
+  const key = [...characters].sort((left, right) => left - right).join(",");
+  const cached = guessedDeckPriorCache.get(key);
+  if (typeof cached === "number") {
+    return cached;
+  }
+  const decks = DECK_LIBRARY.filter(
+    (deck) =>
+      characters.length === deck.characters.length &&
+      characters.every((id) => deck.characters.includes(id)),
+  );
+  const rates: number[] = [];
+  for (const deck of decks) {
+    for (const cardId of new Set(deck.cards)) {
+      const record = EXPERIENCE_SEED.cards[cardId];
+      if (record?.games) {
+        rates.push(record.wins / record.games);
+      }
+    }
+  }
+  if (rates.length === 0) {
+    for (const id of characters) {
+      const record = EXPERIENCE_SEED.characters[id];
+      if (record?.games) {
+        rates.push(record.wins / record.games);
+      }
+    }
+  }
+  const average = rates.length
+    ? rates.reduce((sum, rate) => sum + rate, 0) / rates.length
+    : 0.5;
+  const value = Math.max(-1, Math.min(1, (average - 0.5) * 4));
+  guessedDeckPriorCache.set(key, value);
   return value;
 }
 
@@ -282,7 +327,8 @@ export function stateFeatureMap(
     iAmFirstSeat: who === 0 ? 1 : 0,
     isMyTurn: state.currentTurn === who ? 1 : 0,
     deckPriorDiff: USE_DECK_PRIOR_FEATURE
-      ? deckPriorOf(me) - deckPriorOf(enemy)
+      ? deckPriorOf(me) -
+        guessedDeckPriorOf(enemy.characters.map((character) => character.definition.id))
       : 0,
     ...(() => {
       const burst = burstOf(me);

@@ -20,6 +20,7 @@ import {
   createMemory,
   createMemoryAdapter,
   isPayable,
+  pickDmcAction,
   policyScores,
   scoreAction,
   searchBestAction,
@@ -107,6 +108,16 @@ const nn = fs.existsSync(NN_PATH) ? JSON.parse(fs.readFileSync(NN_PATH, "utf8"))
 
 if (NN_PATH && !nn && (A_MODE === "v2nn" || B_MODE === "v2nn" || A_MODE === "v1nn" || B_MODE === "v1nn")) {
   throw new Error(`缺少神经网络权重: ${NN_PATH}`);
+}
+
+/** DMC：不搜索的动作打分网络；--a=dmc / --b=dmc 时必需 */
+const DMC_PATH = args.dmc ?? null;
+const dmcWeights =
+  (A_MODE === "dmc" || B_MODE === "dmc") && DMC_PATH
+    ? JSON.parse(fs.readFileSync(DMC_PATH, "utf8"))
+    : null;
+if ((A_MODE === "dmc" || B_MODE === "dmc") && !dmcWeights) {
+  throw new Error("--a=dmc / --b=dmc 需要 --dmc=<权重 JSON>");
 }
 
 const policy =
@@ -231,6 +242,15 @@ async function playOne(pairIndex, swap, aSeat) {
         }
         if (mode === "policy") {
           return pickByPolicy(request.action, seat, game.state, decks[seat]);
+        }
+        if (mode === "dmc") {
+          // 评测不带探索：纯 argmax Q
+          return pickDmcAction(dmcWeights, request.action, game.state, {
+            who: seat,
+            data,
+            style: styleOfDeck(decks[seat]),
+            rng: mulberry32(seed),
+          });
         }
         const result = await searchBestAction(request, {
           who: seat,

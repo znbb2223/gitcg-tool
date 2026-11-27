@@ -29,6 +29,11 @@ export interface AiFlags {
   bayes: { enabled: boolean };
   /** LLM 解说：不参与下棋，只做对局解说 */
   llm: { enabled: boolean };
+  /**
+   * DMC 自对弈动作网络：按 Q(s,a) 直接出招，不跑搜索。
+   * 与策略网络互斥；model 为权重 JSON 的 URL/路径，加载失败自动回退。
+   */
+  dmc: { enabled: boolean; model: string | null };
 }
 
 export const AI_FLAGS_KEY = "gitcg.ai.flags";
@@ -44,6 +49,7 @@ export const DEFAULT_AI_FLAGS: AiFlags = {
   twinNet: { enabled: false, model: null },
   bayes: { enabled: false },
   llm: { enabled: false },
+  dmc: { enabled: false, model: null },
 };
 
 /** 预设：只改组件组合，不改用户的历史选择细节 */
@@ -111,6 +117,7 @@ export function normalizeAiFlags(flags: AiFlags): AiFlags {
     twinNet: { ...flags.twinNet },
     bayes: { ...flags.bayes },
     llm: { ...flags.llm },
+    dmc: { ...flags.dmc },
   };
   if (next.valueNet.enabled && next.valueTable.enabled) {
     next.valueTable.enabled = false;
@@ -132,6 +139,13 @@ export function normalizeAiFlags(flags: AiFlags): AiFlags {
   }
   if (next.twinNet.enabled && !next.twinNet.model) {
     next.twinNet.enabled = false;
+  }
+  // DMC 与策略网络占同一位置；没有权重就视为关闭
+  if (next.dmc.enabled && next.policyNet.enabled) {
+    next.policyNet.enabled = false;
+  }
+  if (next.dmc.enabled && !next.dmc.model) {
+    next.dmc.enabled = false;
   }
   return next;
 }
@@ -163,6 +177,7 @@ export function loadAiFlags(): AiFlags {
       twinNet: { ...DEFAULT_AI_FLAGS.twinNet, ...parsed.twinNet },
       bayes: { ...DEFAULT_AI_FLAGS.bayes, ...parsed.bayes },
       llm: { ...DEFAULT_AI_FLAGS.llm, ...parsed.llm },
+      dmc: { ...DEFAULT_AI_FLAGS.dmc, ...parsed.dmc },
     });
   } catch {
     return { ...DEFAULT_AI_FLAGS };
@@ -212,6 +227,7 @@ export function describeAiFlags(flags: AiFlags): string {
     flags.twinNet.enabled ? "双头" : "-",
     flags.bayes.enabled ? "贝叶斯" : "-",
     flags.llm.enabled ? "LLM" : "-",
+    flags.dmc.enabled ? `DMC(${flags.dmc.model})` : "-",
   ];
   return parts.join(" / ");
 }
