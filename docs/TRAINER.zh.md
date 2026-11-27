@@ -90,6 +90,6 @@ node trainer.mjs
 
 ## 5. 数据规模参考
 
-- 牌组池：4,543 套（`app/data/deck-library.json`，需自行生成）；
+- 牌组池：4,557 套（`app/data/deck-library.json`，需自行生成）；
 - 初始种子：69,515 局（与手机同源）；
 - 12 线程 / 300ms 搜索：约 100 局/批，几分钟一批（视机器而定）。

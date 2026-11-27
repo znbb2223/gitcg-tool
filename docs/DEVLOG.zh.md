@@ -5,6 +5,39 @@
 
 ---
 
+## 0.11.157 — 推演跳过动作预览 / 策略网络 / 牌组库更新
+
+**目标**：在不动模型的前提下，让同样思考时间跑出更多 rollout。
+
+**根因定位**（用 `--searchStats` 实测）：150ms 预算下每手只跑出 **1.3 个 rollout**，
+倒推单次 rollout 约 112ms，其中状态序列化只占 1.6ms，其余全是引擎「每次动作都要枚举全部
+合法动作并计算结算预览」。深度 10→30 时单次 rollout 只从 112ms 涨到 175ms，说明 rollout
+大多没走到深度上限就结束了——**深度参数本身没意义**。
+
+**修法**：
+
+- `core`：`GameOption.skipPreview` + `ActionPreviewer` 支持只跑 modify、跳过沙盒模拟。
+  费用/骰子/合法性仍然准确，`preview` 返回空数组。
+- `ai/search.ts`：新增 `skipRolloutPreview`；rollout 建局时开启。因为 `rolloutPriority`
+  依赖 `preview` 里的伤害值，无预览时退回**静态排序**（技能 > 出牌 > 换人 > 结束，按费用微调）。
+- `ai/ponder.ts`：后台思考同样跳过。
+- `standalone/search.worker.ts`：正式搜索开启该选项。**根节点候选仍是完整预览**。
+
+**效果**：单次 rollout 112ms → 34ms，同预算 rollout 数 ×2.2~3；镜像对照 416 局
+胜率 **63.9%（+13.9 点）**。
+
+**同批其他改动**：策略网络推理（`policy.ts`）与训练脚本、采集 v5（记录牌组索引 + 修复
+对手出牌字段）、A/B 六个新开关。
+
+**踩坑**：
+
+- 小批量 MLP 用多线程 BLAS 反而慢一个数量级（线程调度开销 > 计算量），
+  必须在 `import numpy` 之前设 `OPENBLAS_NUM_THREADS=1`；42k 样本 3 epoch 从 >5 分钟降到 3.9 秒。
+- `train_value.py` / `diagnose-samples.py` 只认 `f` 数组，v3/v4 的向量在 `x` 里，
+  而 `f` 是命名字典，直接 `np.asarray` 报 `float() argument must be ... not 'dict'`。
+
+**数据**：牌组库 4,543 → 4,557 套。
+
 ## 0.11.121 — 20:9 布局基线
 
 - 确立手机 20:9 横屏的经典布局（等比 contain + 背景图填充留边）。
