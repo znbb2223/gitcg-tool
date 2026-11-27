@@ -2,36 +2,21 @@
 
 ## 1. 包结构与职责
 
-```
-packages/
-├── core/            对局引擎（纯逻辑，无 DOM）
-│   ├── src/game.ts           Game 类：状态机、阶段推进、行动执行
-│   ├── src/async_context 等  异步上下文 / 事件流
-│   └── 被 web-ui-core 与 ai 共同依赖
-├── data/            卡牌、角色、技能、状态的静态数据（由官方数据生成）
-├── ai/              AI 主体
-│   ├── src/agents/          搜索型 agent、出牌/换人/响应策略
-│   ├── src/evolution/       进化训练（自对弈 + 经验统计）
-│   ├── src/data/            经验种子（experience-seed.ts）、牌组池
-│   └── scripts/             爬取与离线训练脚本
-├── web-ui-core/     对局界面组件
-│   ├── src/layout.ts        ★ 棋盘坐标函数（角色区/实体/手牌）
-│   ├── src/components/      Chessboard / TransformWrapper / HandArea ...
-│   └── src/style.css
-├── deck-builder/    组牌器组件（筛选、牌组码、合法性检查）
-├── state-editor/    摆盘器组件
-├── standalone/      独立 Web 应用
-│   ├── src/StandaloneParent.tsx   对局容器、布局模式、方向同步
-│   ├── src/board-layout.ts        ★ 锚点布局引擎（AnchorSpec / place / stageRect）
-│   ├── src/lab.ts                 卡组实验室（多线程 worker）
-│   ├── src/deck-library.ts        牌组库
-│   ├── src/deckbuilder.tsx        组牌器页面
-│   ├── src/state-editor.tsx       摆盘器页面
-│   ├── src/share-image.ts         牌组图导出
-│   ├── hub.html                   工具首页（入口 + 设置 + 版本号）
-│   └── public/                    静态资源、about.html、responsive.css
-└── (其他上游包：cbinding / proto / data-code-analyzer …)
-```
+| 目录 | 作用 |
+|---|---|
+| `packages/core/` | 对局引擎（纯逻辑，无 DOM） |
+| `core/src/game.ts` | `Game` 类：状态机、阶段推进、行动执行 |
+| `core/src/async_context` | 异步上下文 / 事件流 |
+| `packages/data/` | 卡牌、角色、技能、状态静态数据 |
+| `packages/ai/src/agents/` | 搜索型 agent、出牌/换人/响应策略 |
+| `packages/ai/src/evolution/` | 进化训练（自对弈 + 经验统计） |
+| `packages/ai/src/data/` | 经验种子、牌组池 |
+| `packages/ai/scripts/` | 爬取与离线训练脚本 |
+| `packages/web-ui-core/` | 对局界面组件（棋盘/手牌/骰子/技能面板） |
+| `packages/deck-builder/` | 组牌器组件（筛选、牌组码、合法性检查） |
+| `packages/state-editor/` | 摆盘器组件 |
+| `packages/standalone/` | 独立 Web 应用（页面入口、布局、方向同步） |
+
 
 ## 2. 运行时数据流
 
@@ -63,11 +48,14 @@ StandaloneParent.tsx
 
 ### AI
 
-```
-ai/src/agents        给定局面 → 枚举行动 → 评估 → 选最优
-ai/src/evolution     自对弈 N 局 → 统计角色/卡牌/牌组胜率 → 更新经验
-ai/src/data/experience-seed.ts   编译进包的经验种子（手机端首启可用）
-```
+- `StandaloneParent.tsx` 读取布局模式（classic / stretch / anchor）与主体方向；
+- 创建 `Game`（core）实例，按需挂上 AI agent；
+- 渲染 `<Chessboard>`（web-ui-core）：
+  - `Background` 背景图（20:9 webp）；
+  - `TransformWrapper` 负责缩放/居中/spread，写入 `setBoardSpread(kx, ky, unitPx)`；
+  - `layout.ts` 按 spread 计算角色区/实体/手牌坐标；
+  - `HandArea / CharacterArea / EntityArea` 等区域组件。
+
 
 手机端 AI 强度来源：搜索预算（`searchBudgetMs`，默认 300ms）+ 经验库；
 电脑训练器用同一套 AI，跑更多对局后把经验导回手机。
@@ -105,14 +93,12 @@ android/src/MainActivity.java
 
 ## 5. 构建产物
 
-```
-packages/standalone/dist/          Vite 构建产物
-  index.html → 重命名为 app.html（模拟器）
-  hub.html   → 重命名为 index.html（首页）
-  editor.html / about.html / responsive.css 从 public/ 拷入
-android/dist-lab/                  安卓 assets 源目录
-android/build/gitcg.apk            打包产物（d8 + aapt + apksigner）
-```
+| 路径 | 作用 |
+|---|---|
+| `ai/src/agents` | 给定局面 → 枚举行动 → 评估 → 选最优 |
+| `ai/src/evolution` | 自对弈 N 局 → 统计角色/卡牌/牌组胜率 → 更新经验 |
+| `ai/src/data/experience-seed.ts` | 编译进包的经验种子（手机端首启可用） |
+
 
 
 ---
