@@ -224,3 +224,14 @@ cd android && ./build.sh     # 需要 android-sdk、d8、apksigner
 
 代码以 **AGPL-3.0** 分发，见 [LICENSE](./LICENSE)。
 修改后再分发（包括以服务形式提供）时，请保留同样许可并公开源码。
+
+
+---
+
+## 相关文档
+
+- [AI-EXPERIMENTS.zh.md](docs/AI-EXPERIMENTS.zh.md) · [AI-ROADMAP.zh.md](docs/AI-ROADMAP.zh.md) · [AI-实现详解.zh.md](docs/AI-实现详解.zh.md) · [AI.zh.md](docs/AI.zh.md)
+- [AI实验交接-2026-11-27.md](docs/AI实验交接-2026-11-27.md) · [ARCHITECTURE.zh.md](docs/ARCHITECTURE.zh.md) · [ASSETS.zh.md](docs/ASSETS.zh.md) · [BUILD.zh.md](docs/BUILD.zh.md)
+- [DATA.zh.md](docs/DATA.zh.md) · [DEVLOG.zh.md](docs/DEVLOG.zh.md) · [GLOSSARY.zh.md](docs/GLOSSARY.zh.md) · [INSTALL.zh.md](docs/INSTALL.zh.md)
+- [KNOWN-ISSUES.zh.md](docs/KNOWN-ISSUES.zh.md) · [PITFALLS.zh.md](docs/PITFALLS.zh.md) · [README.md](docs/README.md) · [ROADMAP.zh.md](docs/ROADMAP.zh.md)
+- [TESTING.zh.md](docs/TESTING.zh.md) · [TRAINER.zh.md](docs/TRAINER.zh.md) · [UI.zh.md](docs/UI.zh.md) · [USER-GUIDE.zh.md](docs/USER-GUIDE.zh.md)

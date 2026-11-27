@@ -174,3 +174,14 @@
 | 2026-11 | 搜索接入 `valueOptions`，App 端到端跑通（默认关闭） |
 | 2026-11 | 采集器支持动作标签；训练器 numpy 版跑通（8936 样本 → 66.9%） |
 | 2026-11 | 云端采集 2 万局启动（腾讯云 4 核） |
+
+
+---
+
+## 相关文档
+
+- [AI-EXPERIMENTS.zh.md](AI-EXPERIMENTS.zh.md) · [AI-实现详解.zh.md](AI-实现详解.zh.md) · [AI.zh.md](AI.zh.md) · [AI实验交接-2026-11-27.md](AI实验交接-2026-11-27.md)
+- [ARCHITECTURE.zh.md](ARCHITECTURE.zh.md) · [ASSETS.zh.md](ASSETS.zh.md) · [BUILD.zh.md](BUILD.zh.md) · [DATA.zh.md](DATA.zh.md)
+- [DEVLOG.zh.md](DEVLOG.zh.md) · [GLOSSARY.zh.md](GLOSSARY.zh.md) · [INSTALL.zh.md](INSTALL.zh.md) · [KNOWN-ISSUES.zh.md](KNOWN-ISSUES.zh.md)
+- [PITFALLS.zh.md](PITFALLS.zh.md) · [README.md](README.md) · [ROADMAP.zh.md](ROADMAP.zh.md) · [TESTING.zh.md](TESTING.zh.md)
+- [TRAINER.zh.md](TRAINER.zh.md) · [UI.zh.md](UI.zh.md) · [USER-GUIDE.zh.md](USER-GUIDE.zh.md) · [README.md](../README.md)

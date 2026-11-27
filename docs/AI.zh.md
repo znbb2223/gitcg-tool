@@ -159,3 +159,14 @@ App 侧在 `standalone/src/search.worker.ts` 固定开启（搜索与后台胜�
 **为什么封存**：所有数字都是 AI 对 AI，搜索版打不过熟练玩家；价值网/策略网/DMC 都没能在
 可承担的成本内跨过"2500ms 搜索"这条线。完整的失败清单、方法论教训与归档数据见
 [AI 终结报告](../artifacts/ai/AI-终结报告-2026-11-28.md)。
+
+
+---
+
+## 相关文档
+
+- [AI-EXPERIMENTS.zh.md](AI-EXPERIMENTS.zh.md) · [AI-ROADMAP.zh.md](AI-ROADMAP.zh.md) · [AI-实现详解.zh.md](AI-实现详解.zh.md) · [AI实验交接-2026-11-27.md](AI实验交接-2026-11-27.md)
+- [ARCHITECTURE.zh.md](ARCHITECTURE.zh.md) · [ASSETS.zh.md](ASSETS.zh.md) · [BUILD.zh.md](BUILD.zh.md) · [DATA.zh.md](DATA.zh.md)
+- [DEVLOG.zh.md](DEVLOG.zh.md) · [GLOSSARY.zh.md](GLOSSARY.zh.md) · [INSTALL.zh.md](INSTALL.zh.md) · [KNOWN-ISSUES.zh.md](KNOWN-ISSUES.zh.md)
+- [PITFALLS.zh.md](PITFALLS.zh.md) · [README.md](README.md) · [ROADMAP.zh.md](ROADMAP.zh.md) · [TESTING.zh.md](TESTING.zh.md)
+- [TRAINER.zh.md](TRAINER.zh.md) · [UI.zh.md](UI.zh.md) · [USER-GUIDE.zh.md](USER-GUIDE.zh.md) · [README.md](../README.md)
