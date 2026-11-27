@@ -22,6 +22,7 @@
  * 3. `nnValue` —— 小型神经网络（ONNX 风格的纯 JSON 权重，纯 JS 前向）。
  */
 
+import { DiceType } from "@gi-tcg/core";
 import type { GameState, PlayerState } from "@gi-tcg/core";
 import { EXPERIENCE_SEED } from "./data/experience-seed";
 
@@ -79,6 +80,15 @@ export const FEATURE_NAMES = [
   "isMyTurn",
   // 牌组强度先验（来自经验库）
   "deckPriorDiff",
+  // 大招准备度（v6 追加）：决定「要不要攒骰子/调和凑大招」
+  /** 当前出战角色还要几个同元素骰才能放大招（0 = 骰子已够） */
+  "myBurstDiceGap",
+  /** 还要几点能量（0 = 能量已满） */
+  "myBurstEnergyGap",
+  /** 骰子与能量都够，大招随时可放 */
+  "myBurstReady",
+  /** 手牌数量：可用来元素调和的资源量 */
+  "myTunable",
 ] as const;
 
 export type FeatureName = (typeof FEATURE_NAMES)[number];
@@ -180,6 +190,49 @@ export function stateFeatureMap(
     Math.max(activeOf(player)?.variables.health ?? 0, 0) / 10;
   const charHp = (player: PlayerState, index: number) =>
     Math.max(characterAt(player, index)?.variables.health ?? 0, 0) / 10;
+  /**
+   * 出战角色的大招准备度。
+   * 大招费用形如 Map { 元素骰 ×N, 能量 ×M }，元素骰只能由同色或万能骰支付。
+   */
+  const burstOf = (player: PlayerState) => {
+    const active = activeOf(player);
+    if (!active) {
+      return { diceGap: 0, energyGap: 0, ready: 0 };
+    }
+    const burst = active.definition.skills?.find(
+      (skill) => skill.skillType === "burst",
+    );
+    const required = burst?.initiativeSkillConfig?.requiredCost;
+    if (!required) {
+      return { diceGap: 0, energyGap: 0, ready: 0 };
+    }
+    // 从费用本身推需求：能量以外的都是骰子（通常全部同元素）
+    let diceNeed = 0;
+    let energyNeed = 0;
+    const wanted = new Set<number>();
+    for (const [type, count] of required) {
+      if (type === DiceType.ENERGY) {
+        energyNeed += count;
+      } else {
+        diceNeed += count;
+        wanted.add(type);
+      }
+    }
+    const matchingDice = player.dice.filter(
+      (die) => wanted.has(die) || die === DiceType.Omni,
+    ).length;
+    const diceGap = Math.max(0, diceNeed - matchingDice);
+    const energyGap = Math.max(
+      0,
+      Math.min(energyNeed, active.variables.maxEnergy) - active.variables.energy,
+    );
+    return {
+      diceGap: Math.min(diceGap, 4) / 4,
+      energyGap: Math.min(energyGap, 3) / 3,
+      ready: diceGap === 0 && energyGap === 0 ? 1 : 0,
+    };
+  };
+
   const charEnergy = (player: PlayerState, index: number) => {
     const character = characterAt(player, index);
     if (!character) {
@@ -231,6 +284,15 @@ export function stateFeatureMap(
     deckPriorDiff: USE_DECK_PRIOR_FEATURE
       ? deckPriorOf(me) - deckPriorOf(enemy)
       : 0,
+    ...(() => {
+      const burst = burstOf(me);
+      return {
+        myBurstDiceGap: burst.diceGap,
+        myBurstEnergyGap: burst.energyGap,
+        myBurstReady: burst.ready,
+        myTunable: me.hands.length / 10,
+      };
+    })(),
   };
 }
 

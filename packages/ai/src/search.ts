@@ -27,10 +27,10 @@ import {
   createRpcResponse,
   type Action,
   type ActionRequest,
-  type DiceType,
   type RpcRequest,
   type RpcResponse,
 } from "@gi-tcg/typings";
+import { DiceType } from "@gi-tcg/typings";
 import {
   Game,
   deserializeGameStateLog,
@@ -92,6 +92,8 @@ export interface SearchResult {
   candidates: SearchCandidateStat[];
   rollouts: number;
   elapsedMs: number;
+  /** 是否命中了后台预计算的缓存（命中后仍会复核，但预算更短） */
+  cacheHit?: boolean;
   /** 是否直接来自记忆（0 ms 出招） */
   cached: boolean;
 }
@@ -275,7 +277,7 @@ function rolloutPriority(action: Action, ctx: RolloutContext | null): number {
 }
 
 /** 给动作取一个稳定的"指纹"，用来在恢复后的局面里找回同一个动作 */
-function actionKey(action: Action): string {
+export function actionKey(action: Action): string {
   const act = action.action;
   switch (act?.$case) {
     case "useSkill":
@@ -400,6 +402,148 @@ export function evaluateState(state: GameState, who: 0 | 1): number {
  *
  * 预算分配是"轮流给每个候选一次推演"，候选多时也不会把时间全花在第一手上。
  */
+/** 后台预计算好的决策：局面指纹 → 推荐动作 */
+const precomputed = new Map<string, { actionKey: string; at: number }>();
+let cacheHitCount = 0;
+/** 取走并清零「后台预计算命中」计数（实验统计用） */
+export function takeCacheHitCount(): number {
+  const value = cacheHitCount;
+  cacheHitCount = 0;
+  return value;
+}
+const PRECOMPUTE_TTL_MS = 5 * 60_000;
+
+/** 记录后台算好的一手（供下一回合命中） */
+export function recordPrecomputed(state: GameState, actionKeyValue: string): void {
+  const key = JSON.stringify(serializeGameStateLog([{ state, canResume: true }]));
+  precomputed.set(key, { actionKey: actionKeyValue, at: Date.now() });
+  if (precomputed.size > 64) {
+    const oldest = [...precomputed.entries()].sort((a, b) => a[1].at - b[1].at)[0];
+    if (oldest) precomputed.delete(oldest[0]);
+  }
+}
+
+function lookupPrecomputed(stateKey: string): string | null {
+  const hit = precomputed.get(stateKey);
+  if (!hit) return null;
+  if (Date.now() - hit.at > PRECOMPUTE_TTL_MS) {
+    precomputed.delete(stateKey);
+    return null;
+  }
+  return hit.actionKey;
+}
+
+
+/**
+ * 后台预计算：从当前局面出发，模拟「我方这一手 → 对手最可能的回应」，
+ * 到达我方下一个决策点后跑一次短搜索，把结论写进缓存。
+ * 前台轮到那个局面时，就能用更短的时间复核。
+ */
+export async function precomputeLine(
+  request: ActionRequest,
+  options: SearchOptions & { ourActionKey?: string },
+): Promise<{ recorded: boolean }> {
+  const { who, data, state } = options;
+  const budgetMs = options.budgetMs ?? 2000;
+  const wanted = options.ourActionKey ?? null;
+  if (wanted === null) {
+    return { recorded: false };
+  }
+  const serialized = JSON.stringify(
+    serializeGameStateLog([{ state, canResume: true }]),
+  );
+  const restored = deserializeGameStateLog(data, JSON.parse(serialized))[0].state;
+  const game = new Game(restored, { silent: true, skipPreview: true });
+  const rng = makeRng(Math.floor(Math.random() * 0x7fffffff));
+  let forced = false;
+  let capturedState: GameState | null = null;
+  let capturedRequest: ActionRequest | null = null;
+  for (const seat of [0, 1]) {
+    game.players[seat].io = {
+      notify: () => {},
+      rpc: (rpcRequest: RpcRequest) => {
+        if (rpcRequest.request?.$case === "action") {
+          const body = rpcRequest.request.value;
+          if (seat === who && !forced) {
+            // 我方这一手按前台选定的动作走
+            const index = body.action.findIndex((action) => actionKey(action) === wanted);
+            if (index >= 0) {
+              forced = true;
+              return createRpcResponse("action", {
+                chosenActionIndex: index,
+                usedDice: [...body.action[index].autoSelectedDice],
+              });
+            }
+          }
+          if (seat === who && forced && capturedState === null) {
+            // 再次轮到我方 → 这就是要预计算的局面
+            capturedState = game.state;
+            capturedRequest = rpcRequest.request.value;
+          }
+        }
+        return fastReply(rpcRequest, null, rng);
+      },
+    };
+  }
+  await game.start().catch(() => void 0);
+  if (!capturedState || !capturedRequest) {
+    return { recorded: false };
+  }
+  const result = await searchBestAction(capturedRequest, {
+    ...options,
+    state: capturedState,
+    budgetMs,
+    memory: undefined,
+    cachedBudgetMs: undefined,
+  });
+  const chosen = capturedRequest.action[result.chosenActionIndex];
+  if (!chosen) {
+    return { recorded: false };
+  }
+  recordPrecomputed(capturedState, actionKey(chosen));
+  return { recorded: true };
+}
+
+/**
+ * 出战角色的大招计划：还差几个同元素骰、能量够不够。
+ * 大招不合法（NO_DICE）时它进不了候选，所以必须在「还能调和凑骰」的回合提前规划。
+ */
+function burstPlanOf(
+  state: GameState,
+  who: 0 | 1,
+): { diceGap: number; energyFull: boolean; needed: Set<number> } | null {
+  const me = state.players[who];
+  const active = me.characters.find(
+    (character) => character.id === me.activeCharacterId,
+  );
+  const burst = active?.definition.skills?.find(
+    (skill) => skill.skillType === "burst",
+  );
+  const required = burst?.initiativeSkillConfig?.requiredCost;
+  if (!required) {
+    return null;
+  }
+  let diceNeed = 0;
+  let energyNeed = 0;
+  const needed = new Set<number>();
+  for (const [type, count] of required) {
+    if (type === DiceType.ENERGY) {
+      energyNeed += count;
+    } else {
+      diceNeed += count;
+      needed.add(type);
+    }
+  }
+  const matching = me.dice.filter(
+    (die) => needed.has(die) || die === DiceType.Omni,
+  ).length;
+  return {
+    diceGap: Math.max(0, diceNeed - matching),
+    energyFull: active.variables.energy >= Math.min(energyNeed, active.variables.maxEnergy),
+    needed,
+  };
+}
+
 export async function searchBestAction(
   request: ActionRequest,
   options: SearchOptions,
@@ -418,9 +562,43 @@ export async function searchBestAction(
   const validIndexes = actions.flatMap((action, index) =>
     action.validity === ActionValidity.VALID ? [index] : [],
   );
-  const heuristicOrder = [...validIndexes].sort(
-    (a, b) => rawPriority(actions[b]) - rawPriority(actions[a]),
-  );
+  // 大招计划：能量已满但缺骰子时，优先用元素调和凑骰；骰子够了就把大招顶上去
+  const playStateKey = JSON.stringify(serializeGameStateLog([{ state, canResume: true }]));
+  const cachedKey = lookupPrecomputed(playStateKey);
+  const cachedIndex = cachedKey === null
+    ? -1
+    : actions.findIndex((action) => actionKey(action) === cachedKey);
+  if (cachedIndex >= 0) {
+    cacheHitCount += 1;
+  }
+  const plan = options.burstPlan === false ? null : burstPlanOf(state, who);
+  const tuningBoost = plan && plan.energyFull && plan.diceGap > 0 ? 3.2 : 0;
+  const burstBoost = plan && plan.energyFull && plan.diceGap === 0 ? 3.5 : 0;
+  const priorOf = (index: number) => {
+    const action = actions[index];
+    const kind = action.action?.$case;
+    let bonus = 0;
+    if (index === cachedIndex) {
+      // 后台已经算过这一手：大概率是对的，顶到最前，但仍要跑搜索验证
+      bonus += 4;
+    }
+    if (tuningBoost > 0 && kind === "elementalTuning") {
+      bonus = tuningBoost;
+    } else if (burstBoost > 0 && kind === "useSkill") {
+      const skillId = action.action.value.skillDefinitionId;
+      const active = state.players[who].characters.find(
+        (character) => character.id === state.players[who].activeCharacterId,
+      );
+      const isBurst = active?.definition.skills?.some(
+        (skill) => skill.skillType === "burst" && skill.id === skillId,
+      );
+      if (isBurst) {
+        bonus = burstBoost;
+      }
+    }
+    return rawPriority(action) + bonus;
+  };
+  const heuristicOrder = [...validIndexes].sort((a, b) => priorOf(b) - priorOf(a));
   const candidates = heuristicOrder.slice(0, maxCandidates);
   const fallbackIndex = heuristicOrder[0] ?? 0;
   const fallback = {
@@ -495,8 +673,11 @@ export async function searchBestAction(
   // 分支越少越不用算；见过的局面也越算越快
   const branchingScale =
     candidates.length <= 2 ? 0.25 : candidates.length <= 4 ? 0.6 : 1;
+  // 后台算过的局面：前台只花一小段时间复核，剩下的时间省下来
+  const cachedBudget =
+    cachedIndex >= 0 ? Math.min(budgetMs, options.cachedBudgetMs ?? budgetMs * 0.35) : budgetMs;
   const effectiveBudget =
-    budgetMs * (visits === 0 ? 1 : visits === 1 ? 0.6 : 0.4) * branchingScale;
+    cachedBudget * (visits === 0 ? 1 : visits === 1 ? 0.6 : 0.4) * branchingScale;
 
   const stats: SearchCandidateStat[] = candidates.map((index) => ({
     index,
@@ -506,7 +687,7 @@ export async function searchBestAction(
     losses: 0,
     draws: 0,
     average: 0,
-    heuristic: rawPriority(actions[index]),
+    heuristic: priorOf(index),
   }));
   const scoreSums = candidates.map(() => 0);
 

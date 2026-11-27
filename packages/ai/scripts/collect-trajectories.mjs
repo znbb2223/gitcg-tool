@@ -9,7 +9,7 @@
 //   --start 0                      起始局号（断点续跑用）
 //
 // 输出: <out>/shard-<shard>.jsonl + <out>/progress-<shard>.json
-// 行格式(v5): {"v":5,"d":[我方牌组索引,对手牌组索引],"s":座位,"w":胜负,"t":回合,"f":命名特征,"x":40维向量,
+// 行格式(v6): {"v":6,"d":[我方牌组索引,对手牌组索引],"s":座位,"w":胜负,"t":回合,"f":命名特征,"x":44维向量（含大招准备度）,
 //              "c":按打分排序的候选,"ai":选中动作在 c 里的位置,"n":候选总数,
 //              "a":选中动作的全局下标,"l":动作标签,"h":手牌,"e":对手已出牌}
 
@@ -308,7 +308,7 @@ async function runGame(gameIndex) {
   for (const sample of samples) {
     lines.push(
       `${JSON.stringify({
-        v: 5,
+        v: 6,
         s: sample.seat,
         w: winner === sample.seat ? 1 : 0,
         t: sample.round,

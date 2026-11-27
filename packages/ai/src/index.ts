@@ -43,6 +43,10 @@ export {
   type ShieldHit,
 } from "./evaluate";
 export {
+  actionKey,
+  precomputeLine,
+  takeCacheHitCount,
+  recordPrecomputed,
   searchBestAction,
   type SearchCandidateStat,
   type SearchOptions,

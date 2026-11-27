@@ -12,7 +12,10 @@ import { CURRENT_VERSION, Game, exposeState } from "@gi-tcg/core";
 import getData from "@gi-tcg/data";
 import { ActionValidity } from "@gi-tcg/typings";
 import {
+  actionKey,
   candidateFeatures,
+  precomputeLine,
+  takeCacheHitCount,
   createAi,
   createMemory,
   createMemoryAdapter,
@@ -59,6 +62,12 @@ const USE_POLICY_GUIDE = args.policyGuide === "true"? true : args.policyGuide ==
 const SEARCH_STATS = args.searchStats === "true";
 /** rollout 内跳过动作预览：A/B 可分别开，用来测"加速换来的 rollout 数"值不值 */
 const SKIP_PREVIEW_A = args.skipPreview === "true";
+/** 大招计划：能量满时攒骰/调和凑大招；两侧可分别关闭，用来测净效果 */
+const BURST_PLAN_A = args.noBurstPlan !== "true";
+/** 后台预计算预算（毫秒）；0 表示关闭。默认 0，实验时显式开启 */
+const PRECOMPUTE_MS = Number(args.precompute ?? 0);
+let cacheHits = 0;
+const BURST_PLAN_B = args.noBurstPlanB !== "true";
 const SKIP_PREVIEW_B = args.skipPreviewB === "true";
 const searchStats = { decisions: 0, rollouts: 0, elapsed: 0, budget: 0 };
 const memoryStats = { gets: 0, hits: 0 };
@@ -230,11 +239,24 @@ async function playOne(pairIndex, swap, aSeat) {
           valueOptions: valueOptionsOf(mode),
           perfectInformation: isA ? PERFECT_A : PERFECT_B,
           skipRolloutPreview: isA ? SKIP_PREVIEW_A : SKIP_PREVIEW_B,
+          burstPlan: isA ? BURST_PLAN_A : BURST_PLAN_B,
           // 策略头只给候选排序，搜索仍是主力
           heuristicScores:
             USE_POLICY_GUIDE && policy ? policyPrior(request.action, seat, game.state, decks[seat]) : undefined,
           memory: isA && memoryA ? memoryA : undefined,
         });
+        cacheHits += takeCacheHitCount();
+        if (PRECOMPUTE_MS > 0) {
+          void precomputeLine(request, {
+            who: seat,
+            data,
+            state: game.state,
+            budgetMs: PRECOMPUTE_MS,
+            maxActions: 10,
+            maxCandidates: 8,
+            ourActionKey: actionKey(result.action ?? request.action[result.chosenActionIndex]),
+          }).catch(() => void 0);
+        }
         if (SEARCH_STATS) {
           searchStats.decisions += 1;
           searchStats.rollouts += result.rollouts ?? 0;
@@ -303,6 +325,7 @@ console.log(
       searchRollouts: searchStats.rollouts,
       searchElapsedMs: searchStats.elapsed,
       searchBudgetMs: searchStats.budget,
+      cacheHits,
       memoryGets: memoryStats.gets,
       memoryHits: memoryStats.hits,
       seconds: elapsed,
