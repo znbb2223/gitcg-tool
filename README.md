@@ -16,8 +16,10 @@
 [AI 实现详解](./docs/AI-实现详解.zh.md) ·
 [架构](./docs/ARCHITECTURE.zh.md) ·
 [构建](./docs/BUILD.zh.md) ·
-[安卓壳](./android/README.md) ·
-[项目总总结](./artifacts/项目总总结-2026-11-28.md)
+[维护与数据更新](./docs/MAINTENANCE.zh.md) ·
+[已知问题](./docs/KNOWN-ISSUES.zh.md) ·
+[牌组码工具](./tools/deckcode/README.md) ·
+[安卓壳](./android/README.md)
 
 </div>
 
@@ -26,6 +28,16 @@
 
 > **项目状态（2026-11-28）**：工具功能已完成，**AI 研究线已封存**（不再迭代，仅保留搜索版 AI）。
 > 总总结见 [artifacts/项目总总结-2026-11-28.md](./artifacts/项目总总结-2026-11-28.md)。
+
+> **⚠️ 短期不再更新 / 只有 7.2.0 数据**
+> 本仓库当前只含 **7.2.0** 卡牌数据，作者短期内不打算继续跟进版本。
+> 原神官方或上游「雨酱牌」更新到 7.3.0 后，需要使用者自己合并数据；
+> 完整步骤（含“上游没更新时怎么按机制自己补”）见 **[维护与数据更新](./docs/MAINTENANCE.zh.md)**。
+> 已知 BUG（模拟器牌组输入框实际控制人机/AI、组牌器竖屏放大镜失效）见 **[KNOWN-ISSUES](./docs/KNOWN-ISSUES.zh.md)**。
+
+> **🧩 非常规牌组码**：首页那张“3 个相同角色 + 30 张相同卡”的牌组图，是用
+> **[牌组码工具](./tools/deckcode/README.md)** 生成的**非常手段**牌组，不是正常可对战牌组；
+> 想自己生成/解码，见工具目录里的 4 个版本（sh / cmd / Windows / HTML）。
 
 ---
 
@@ -103,7 +115,7 @@
 </tr>
 </table>
 
-<p align="center"><img src="./docs/screenshots/09-deck-image.png" width="280"><br/><sub>牌组图（由工具生成）</sub></p>
+<p align="center"><img src="./docs/screenshots/09-deck-image.png" width="280"><br/><sub>牌组图（由牌组码工具生成的非常规整活牌组）</sub></p>
 
 ## 四、整体结构
 
