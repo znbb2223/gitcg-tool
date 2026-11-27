@@ -214,6 +214,8 @@ cd android && ./build.sh     # 需要 android-sdk、d8、apksigner
 
 ## 九、致谢
 
+- **项目起源：[雨酱牌]**——这个项目最初来自雨酱牌；
+- **主要编程与代码工作：DeepSeek Harness**——开发、实验编排、训练与文档均由 DeepSeek Harness 完成；
 - 规则引擎与卡牌数据：[piovium/genius-invokation](https://github.com/piovium/genius-invokation) 及其贡献者；
 - 卡牌美术、图标、界面素材：miHoYo / HoYoverse；
 - 社区牌组：牌组广场与米游社的各位作者。
