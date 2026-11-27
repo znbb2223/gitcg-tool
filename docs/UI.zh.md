@@ -24,6 +24,7 @@
 ### 布局模式判定
 
 ```js
+// 是否使用加宽布局：锚点模式，或 classic 模式且屏幕为 20:9
 const wide = mode === "anchor" || (mode === "classic" && is20x9);
 // 20:9 → classic（0.11.121 布局），其他 → anchor
 ```
