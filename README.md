@@ -166,6 +166,7 @@ cd android && ./build.sh     # 需要 android-sdk、d8、apksigner
 |---|---|
 | [docs/ARCHITECTURE.zh.md](./docs/ARCHITECTURE.zh.md) | 各包职责、运行时数据流、安卓壳实现、AI 结构 |
 | [docs/BUILD.zh.md](./docs/BUILD.zh.md) | 构建、打包、签名、版本号、测试环境 |
+| [android/README.md](./android/README.md) | 安卓包从零构建：工具链、入口对调、签名与校验 |
 | [docs/DEVLOG.zh.md](./docs/DEVLOG.zh.md) | 迭代记录：每个版本改了什么、问题根因 |
 | [docs/PITFALLS.zh.md](./docs/PITFALLS.zh.md) | 踩坑清单：现象 / 根因 / 解法 |
 | [docs/TRAINER.zh.md](./docs/TRAINER.zh.md) | 训练器设计、参数、经验导出与回灌 |
