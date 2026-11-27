@@ -164,3 +164,12 @@ OPENBLAS_NUM_THREADS=1 python3 packages/ai/tools/train_value.py \
 | `packages/standalone/src/ai-flags.ts` | 9 组组件开关与三档预设（真正接到决策链的只有 search / valueNet / valueTable） |
 | `artifacts/ai/*.md` | 今日结论、实验队列、整合配置、隐藏信息改造、现状总览等 |
 | `artifacts/ai/snapshots/` | 冻结快照（代码 + 模型 + 文档，可回退） |
+
+
+---
+
+## 相关文档
+
+- [项目首页](../../README.md) · [文档中心](../../docs/README.md) · [AI 实现详解](../../docs/AI-实现详解.zh.md) · [AI 原理](../../docs/AI.zh.md)
+- [实验记录](../../docs/AI-EXPERIMENTS.zh.md) · [构建](../../docs/BUILD.zh.md) · [架构](../../docs/ARCHITECTURE.zh.md) · [项目总总结](../项目总总结-2026-11-28.md)
+- [AI 终结报告](AI-终结报告-2026-11-28.md) · [AI 总览](README.md) · [DMC 结果](DMC-结果-2026-11-28.md) · [DMC 设计](DMC设计.md)

@@ -70,3 +70,12 @@
 - AlphaZero：https://www.science.org/doi/10.1126/science.aar6404
 - DeepStack：https://arxiv.org/abs/1701.01724
 - 通才游戏智能体综述：https://thusi-lab.github.io/Awesome-LFMs-Play-Games/
+
+
+---
+
+## 相关文档
+
+- [项目首页](../../README.md) · [文档中心](../../docs/README.md) · [AI 实现详解](../../docs/AI-实现详解.zh.md) · [AI 原理](../../docs/AI.zh.md)
+- [实验记录](../../docs/AI-EXPERIMENTS.zh.md) · [构建](../../docs/BUILD.zh.md) · [架构](../../docs/ARCHITECTURE.zh.md) · [项目总总结](../项目总总结-2026-11-28.md)
+- [AI 终结报告](AI-终结报告-2026-11-28.md) · [AI 总览](README.md) · [DMC 结果](DMC-结果-2026-11-28.md) · [DMC 设计](DMC设计.md)
