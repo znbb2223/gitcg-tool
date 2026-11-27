@@ -11,7 +11,9 @@
 ## 2. 本地起服务
 
 ```bash
+# 进入 Web 产物目录
 cd packages/standalone/dist
+# 后台起静态服务器（8899 端口）
 python3 -m http.server 8899 &
 ```
 
@@ -20,13 +22,21 @@ python3 -m http.server 8899 &
 ## 3. 截图验收
 
 ```python
+# 引入 Playwright 同步 API
 from playwright.sync_api import sync_playwright
+# 启动浏览器上下文
 with sync_playwright() as p:
+    # 启动 Chromium
     b = p.chromium.launch()
+    # 建一个手机尺寸（20:9）的上下文
     ctx = b.new_context(viewport={"width": 792, "height": 445}, is_mobile=True, has_touch=True)
+    # 新建页面
     page = ctx.new_page()
+    # 打开首页
     page.goto("http://127.0.0.1:8899/hub.html")
+    # 等 2.5 秒让资源加载完
     page.wait_for_timeout(2500)
+    # 截图保存
     page.screenshot(path="shot.png")
 ```
 
@@ -37,9 +47,13 @@ with sync_playwright() as p:
 ## 4. DOM 尺寸验收（布局改动必做）
 
 ```python
+# 在页面里执行 JS：读取手牌区域的位置与尺寸
 page.evaluate("""() => {
+  // 找到手牌容器
   const el = document.querySelector('.hand-area');
+  // 取它的布局矩形
   const r = el.getBoundingClientRect();
+  // 返回上下左右与宽高，供断言用
   return {top: r.top, bottom: r.bottom, w: r.width, h: r.height};
 }""")
 ```
@@ -57,9 +71,13 @@ page.evaluate("""() => {
 ## 5. 像素采样（判断是否白屏 / 渲染对错）
 
 ```python
+# 引入 PIL
 from PIL import Image
+# 打开截图并转 RGB
 im = Image.open("shot.png").convert("RGB")
+# 缩到 8×4 取所有像素
 px = list(im.resize((8, 4)).getdata())
+# 计算平均色
 avg = tuple(sum(c[i] for c in px) // len(px) for i in range(3))
 # 全黑 (0,0,0) 或全白 (255,255,255) 基本就是白屏
 ```
@@ -69,10 +87,14 @@ avg = tuple(sum(c[i] for c in px) // len(px) for i in range(3))
 对局类改动用机机观战跑到行动阶段再验：
 
 ```python
+# 在页面里执行 JS：切到 AI 对战并点开始
 page.evaluate("""() => {
+  // 找到值为 aiai 的 select
   const sel = [...document.querySelectorAll('select')]
     .find(s => [...s.options].some(o => o.value === 'aiai'));
+  // 选中并派发 change 事件
   if (sel) { sel.value = 'aiai'; sel.dispatchEvent(new Event('change', {bubbles: true})); }
+  // 找到“开始”按钮并点击
   const btn = [...document.querySelectorAll('button')].find(b => b.textContent.includes('开始'));
   btn && btn.click();
 }""")

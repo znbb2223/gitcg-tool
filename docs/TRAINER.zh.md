@@ -9,17 +9,17 @@ AI 放到电脑上跑几千局，再把「经验」这个轻量结果带回手�
 
 ## 2. 设计
 
-```
-trainer.mjs              交互式主程序（菜单 1-9）
-  ├─ loadLearning()      种子 → learning.json 合并
-  ├─ runBatch()          worker_threads 并行跑 N 局
-  ├─ saveLearning()      原子写盘 + 校验
-  └─ exportBundle()      导出手机可导入的 JSON
-worker.mjs               单个 worker：跑局、回报进度、算增量
-  ├─ playAi()            AI 自对弈（学习模式）
-  ├─ playLibrary()       打牌组库里的真实牌组（随机对手）
-  └─ deltaOf()           每局统计的角色/卡牌/牌组胜率增量
-```
+| 文件 / 函数 | 作用 |
+|---|---|
+| `trainer.mjs` | 交互式主程序（菜单 1-9） |
+| `loadLearning()` | 把经验种子合并进 `learning.json` |
+| `runBatch()` | 用 `worker_threads` 并行跑 N 局 |
+| `saveLearning()` | 原子写盘 + 校验 |
+| `exportBundle()` | 导出手机可导入的 JSON |
+| `worker.mjs` | 单个 worker：跑局、回报进度、算增量 |
+| `playAi()` | AI 自对弈（学习模式） |
+| `playLibrary()` | 打牌组库里的真实牌组（随机对手） |
+| `deltaOf()` | 每局统计角色/卡牌/牌组胜率增量 |
 
 关键点：
 
@@ -34,7 +34,9 @@ worker.mjs               单个 worker：跑局、回报进度、算增量
 ## 3. 使用
 
 ```bash
+# 进入训练器目录
 cd trainer
+# 启动交互式训练器（按菜单操作）
 node trainer.mjs
 ```
 
@@ -56,18 +58,18 @@ node trainer.mjs
 
 配置文件 `config.json`：
 
-```json
+```jsonc
 {
-  "batch": 100,
-  "total": 0,
-  "mode": "both",
-  "information": "fair",
-  "useSearch": true,
-  "searchBudgetMs": 300,
-  "seed": 20260101,
-  "seedFile": "",
-  "deckPool": "both",
-  "workers": 12
+  "batch": 100,          // 每批对局数
+  "total": 0,            // 已完成对局数
+  "mode": "both",        // 训练模式：both / ai / library
+  "information": "fair", // 信息模式：fair 公平 / perfect 明牌
+  "useSearch": true,     // 跑局时是否用搜索 AI
+  "searchBudgetMs": 300, // 搜索预算（毫秒）
+  "seed": 20260101,      // 随机种子
+  "seedFile": "",        // 经验种子文件路径
+  "deckPool": "both",    // 牌组池：both / library / seed
+  "workers": 12          // 并行 worker 数
 }
 ```
 
@@ -75,14 +77,14 @@ node trainer.mjs
 
 导出的结构（手机端「设置 → 导入 AI 数据」可识别）：
 
-```json
+```jsonc
 {
-  "format": "gi-tcg-ai-experience-bundle",
-  "version": 1,
-  "games": 12345,
-  "decks": { "<deckcode>": { "games": 30, "wins": 18, "characters": [...], "cards": [...] } },
-  "characters": { "<id>": { "games": 120, "wins": 70 } },
-  "cards": { "<id>": { "games": 200, "wins": 110 } }
+  "format": "gi-tcg-ai-experience-bundle", // 固定格式标识
+  "version": 1,                              // 版本号
+  "games": 12345,                            // 总对局数
+  "decks": { "<deckcode>": { "games": 30, "wins": 18, "characters": [...], "cards": [...] } }, // 牌组战绩
+  "characters": { "<id>": { "games": 120, "wins": 70 } }, // 角色战绩
+  "cards": { "<id>": { "games": 200, "wins": 110 } }      // 单卡战绩
 }
 ```
 
