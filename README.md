@@ -81,22 +81,29 @@
 
 ## 三、界面预览
 
-> 6 个页面为**竖屏实拍（1080×2400）**；对局页为**横屏实拍（2400×1080）**。
+> 工具首页 / 组牌器 / 摆盘器 / 实验室 / 牌组库等为**竖屏实拍**；对局配置与对局界面为**横屏实拍**。
 
 <table>
 <tr>
-<td align="center" width="33%"><img src="./docs/screenshots/01-hub.png" width="210"><br/><sub>首页</sub></td>
-<td align="center" width="33%"><img src="./docs/screenshots/02-deck-library.png" width="210"><br/><sub>牌组库</sub></td>
-<td align="center" width="33%"><img src="./docs/screenshots/03-deck-builder.png" width="210"><br/><sub>组牌器</sub></td>
+<td align="center" width="33%"><img src="./docs/screenshots/01-hub.png" width="210"><br/><sub>工具首页</sub></td>
+<td align="center" width="33%"><img src="./docs/screenshots/04-deck-builder.png" width="210"><br/><sub>组牌器</sub></td>
+<td align="center" width="33%"><img src="./docs/screenshots/05-state-editor.png" width="210"><br/><sub>摆盘器</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="./docs/screenshots/04-lab.png" width="210"><br/><sub>卡组实验室</sub></td>
-<td align="center"><img src="./docs/screenshots/05-state-editor.png" width="210"><br/><sub>摆盘器</sub></td>
-<td align="center"><img src="./docs/screenshots/06-about.png" width="210"><br/><sub>关于</sub></td>
+<td align="center"><img src="./docs/screenshots/06-lab.png" width="210"><br/><sub>卡组实验室</sub></td>
+<td align="center"><img src="./docs/screenshots/07-lab-deck-image.png" width="210"><br/><sub>实验室 · 生成牌组图</sub></td>
+<td align="center"><img src="./docs/screenshots/08-deck-library.png" width="210"><br/><sub>牌组库</sub></td>
 </tr>
 </table>
 
-<img src="./docs/screenshots/07-game.png" width="100%"><br/><sub>对局模拟器（横屏 2400×1080）</sub>
+<table>
+<tr>
+<td width="50%"><img src="./docs/screenshots/02-sim-config.png"><br/><sub>模拟器 · 对局配置（横屏）</sub></td>
+<td width="50%"><img src="./docs/screenshots/03-sim-game.png"><br/><sub>模拟器 · 对局界面（横屏）</sub></td>
+</tr>
+</table>
+
+<p align="center"><img src="./docs/screenshots/09-deck-image.png" width="280"><br/><sub>牌组图（由工具生成）</sub></p>
 
 ## 四、整体结构
 
