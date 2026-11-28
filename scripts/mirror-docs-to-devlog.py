@@ -23,12 +23,12 @@ BLOB = f"{REPO}/blob/main"
 TREE = f"{REPO}/tree/main"
 
 
-def repo_path(target: str, current: Path) -> str:
-    base = Path("docs") / current.relative_to(ROOT / "docs")
+def repo_path(target: str, current: Path, docs_root: Path) -> str:
+    base = Path("docs") / current.relative_to(docs_root)
     return os.path.normpath(str(base.parent / target)).lstrip("./")
 
 
-def rewrite(text: str, current: Path) -> tuple[str, int]:
+def rewrite(text: str, current: Path, docs_root: Path) -> tuple[str, int]:
     changed = 0
 
     def repl(match: re.Match) -> str:
@@ -39,7 +39,7 @@ def rewrite(text: str, current: Path) -> tuple[str, int]:
         path, _, anchor = target.partition("#")
         if not path or (current.parent / path).exists():
             return match.group(0)
-        dest = repo_path(path, current)
+        dest = repo_path(path, current, docs_root)
         url = (BLOB if Path(dest).suffix else TREE) + "/" + dest
         if anchor:
             url += "#" + anchor
@@ -68,7 +68,7 @@ def main():
     rewritten = 0
     for f in dst.rglob("*.md"):
         text = f.read_text(encoding="utf-8", errors="ignore")
-        text, n = rewrite(text, f)
+        text, n = rewrite(text, f, dst)
         f.write_text(text, encoding="utf-8")
         rewritten += n
 
