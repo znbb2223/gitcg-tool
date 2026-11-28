@@ -139,6 +139,36 @@
 - 解法：纯 ASCII + 存在性检查 + `pause`。
 
 
+## 七、构建、打包与发布（2026-11-28 补）
+
+### 25. 干净 clone 构建报 `Cannot find module '@gi-tcg/typings'`
+- 根因：只跑 `assets-manager → web-ui-core → deck-builder → standalone`，漏了底层包。
+- 解法：`pnpm --filter "@gi-tcg/standalone..." build`（拓扑构建）。
+
+### 26. `android/res` 不存在导致 aapt 失败
+- 根因：launcher 图标没入库（`AndroidManifest` 引用了 `@mipmap/ic_launcher`）。
+- 解法：仓库补 `android/res/mipmap-hdpi-v4/ic_launcher.png`；或从旧 APK 的 `res/mipmap-hdpi-v4/ic_launcher.png` 提取。
+
+### 27. arm64/手机装依赖时 puppeteer postinstall 失败
+- 根因：puppeteer 安装脚本尝试下载 Chromium，arm64 无对应包。
+- 解法：设 `PUPPETEER_SKIP_DOWNLOAD=1`、`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`；失败再 `--ignore-scripts`。
+
+### 28. Termux `pkg install` 一个包不存在，整条失败
+- 根因：Termux 仓库没有 `zipalign`，apt/pkg 遇到未知包直接退出。
+- 解法：逐包安装并容错；缺 zipalign 时用复制 shim（APK 可安装，但非官方对齐），或改用 proot Ubuntu。
+
+### 29. 素材抓了但 APK 缺卡面
+- 根因：`download-assets` 只抓 icon/unspecified/UI；卡面与全尺寸图分别由 `download-cardface`、`download-full` 提供。
+- 解法：四个脚本都跑，并按「总文件 ≥14000、`cardFace/full.webp` ≥800、UI ≥100、datum ≥4000」校验。
+
+### 30. Release 资产中文名被截断
+- 根因：GitHub Release 资产文件名不接受中文，会丢字符。
+- 解法：用 ASCII 文件名（`gitcg-tool-0.11.158-7.2.0.apk`），同页附 `SHA256SUMS.txt`，README 用直链。
+
+### 31. 体积口径混用（149 vs 202MB）
+- 根因：解包字节与 `du` 磁盘占用不是一回事。
+- 解法：统一写「解包 X MB / du Y MB」；卡图 149/202，完整 Web 189/240。
+
 ---
 
 ## 相关文档

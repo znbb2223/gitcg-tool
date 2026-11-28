@@ -293,6 +293,27 @@ comm -23 /tmp/old.txt /tmp/new.txt
 
 ---
 
+## 11. 构建坑速查（2026-11-28 补）
+
+这些是最近一次从零构建 + 出公开包时真实踩到的，按现象列：
+
+| 现象 | 根因 | 解法 |
+|---|---|---|
+| `Cannot find module '@gi-tcg/typings/dist/index.js'` | 只手动跑了 4 个 filter，漏了 `typings/data/core` 等依赖包 | 用 `pnpm --filter "@gi-tcg/standalone..." build` 按依赖拓扑构建 |
+| `ERROR: resource directory 'android/res' does not exist` | 干净 clone 里没有 `android/res`（图标没入库） | 仓库已补 `android/res/mipmap-hdpi-v4/ic_launcher.png`；缺失时从旧 APK 提取 `res/mipmap-hdpi-v4/ic_launcher.png` |
+| `puppeteer@19 postinstall` 失败（arm64 / 手机） | 安装时尝试下载 Chromium | `PUPPETEER_SKIP_DOWNLOAD=1` / `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`，或 `--ignore-scripts` 兜底 |
+| Termux `pkg install` 整条失败 | 命令里含 Termux 没有的包（如 `zipalign`） | 逐包安装；Termux 没有 zipalign 时用复制 shim 或跳过对齐（可安装，非官方对齐） |
+| `d8` 找不到 | 系统没装 build-tools（arm64 上 Google 的 aapt 也跑不了） | 下载 `build-tools_r34-linux.zip`，用 `java -cp lib/d8.jar com.android.tools.r8.D8` 包装成 `d8`；aapt/apksigner/zipalign 用 apt/pkg 原生包 |
+| `android.jar` 找不到 | `ANDROID_SDK` 指错（比如指到 `.../platforms`） | `ANDROID_SDK` 必须是 SDK 根；jar 在 `$SDK/platforms/android-23/android.jar`，或 `apt install android-sdk-platform-23` |
+| 构建成功但 APK 缺卡面 | 素材只抓了 icon/缩略图；`download-assets` 不含卡面 | 依次跑 `download-assets` + `download-datum` + `download-cardface` + `download-full`；校验卡面 ≥800、UI ≥100、总文件 ≥14000 |
+| `find: .../assets-local: No such file` 后脚本中断 | `set -o pipefail` + `find` 目录不存在直接退出；或 `cd` 后用了相对的素材路径 | 先 `mkdir -p`；素材路径用绝对路径，下载放子 shell |
+| Release 资产名变成 `-0.11.158...apk` | GitHub 会截掉中文文件名 | 上传用 ASCII 名（如 `gitcg-tool-0.11.158-7.2.0.apk`），并附 `SHA256SUMS.txt` |
+| 覆盖安装失败 `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | 用了新生成的 keystore | 用原 `gitcg.jks`（证书 `63DB:7B0C…:90:83`）；换签名只能卸载重装 |
+| 体积对不上（149 / 189 / 202 / 240MB） | 解包字节 vs `du` 磁盘占用是两个口径 | 卡图解包 149MB / `du` 202MB；完整 Web 解包 189MB / `du` 240MB；报体积写清口径 |
+
+> 一键构建脚本（`build-oneclick.sh`）已经内置了：拓扑构建、puppeteer 跳过、素材完整性检查、
+> APK 内卡面/UI 校验、原密钥提示。仍建议按上面逐条核对。
+
 ## 相关文档
 
 - [AI-EXPERIMENTS.zh.md](AI-EXPERIMENTS.zh.md) · [AI-ROADMAP.zh.md](AI-ROADMAP.zh.md) · [AI-实现详解.zh.md](AI-实现详解.zh.md) · [AI.zh.md](AI.zh.md)

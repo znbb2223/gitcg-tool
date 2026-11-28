@@ -86,7 +86,7 @@ PY
 | 事实 | 值 | 校验 |
 |---|---|---|
 | 已知问题（最影响使用） | **3 条** | `docs/KNOWN-ISSUES.zh.md` 第零节 |
-| 踩坑清单 | **24 条** | `docs/PITFALLS.zh.md` 二级标题计数 |
+| 踩坑清单 | **31 条** | `docs/PITFALLS.zh.md` 二级标题计数 |
 | Markdown 死链 / 围栏 | **0** | `python3 scripts/check-docs.py` |
 
 ## 7. 记录约定

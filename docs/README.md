@@ -38,7 +38,7 @@
 | [MAINTENANCE.zh.md](./MAINTENANCE.zh.md) | **7.2.0 → 7.3.0 数据合并**、上游没更新时怎么自己补、已知 BUG、牌组码工具 |
 | [BACKUP-SERVER-2026-11.md](./BACKUP-SERVER-2026-11.md) | 云服务器释放前的完整 DMC 样本与实验日志备份 |
 | [DEVLOG.zh.md](./DEVLOG.zh.md) | 逐版本迭代记录（现象 → 根因 → 修法） |
-| [PITFALLS.zh.md](./PITFALLS.zh.md) | 24 条踩坑清单 |
+| [PITFALLS.zh.md](./PITFALLS.zh.md) | 31 条踩坑清单 |
 | [TESTING.zh.md](./TESTING.zh.md) | 截图 / DOM 尺寸 / 像素采样 / AI 自对弈验收 |
 | [DATA.zh.md](./DATA.zh.md) | 牌组码编码、牌组库条目、经验包、缓存键 |
 | [UI.zh.md](./UI.zh.md) | **界面规范**：色板/字体/组件、对局三态布局与锚点数学、素材、断点、验收 |
