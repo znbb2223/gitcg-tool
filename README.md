@@ -34,7 +34,7 @@
 **内置素材 APK**（150MB，Android 10+，零权限、不联网）：
 
 - Release：**[v0.11.158](https://github.com/znbb2223/gitcg-tool/releases/tag/v0.11.158)**
-- 文件：`七圣召唤工具-0.11.158-7.2.0-oneclick-1128.apk`（同页附 `SHA256SUMS.txt`）
+- 文件：[`gitcg-tool-0.11.158-7.2.0.apk`](https://github.com/znbb2223/gitcg-tool/releases/download/v0.11.158/gitcg-tool-0.11.158-7.2.0.apk)（同页附 `SHA256SUMS.txt`）
 - SHA256：`8c1adcbcfbff94f88ef6dc8ba4a7d7a14969a7ac426d72a8b22ecfaed8b5d160`
 - 签名与原版一致（`63DB:7B0C…:90:83`），可覆盖安装旧版
 
