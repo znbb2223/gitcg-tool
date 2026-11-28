@@ -86,6 +86,8 @@ grep -c '^```' docs/*.md
 改 `docs/` 同名源文档后跑 `python3 scripts/sync-dev-docs.py`，脚本会把相对链接改成 GitHub 地址。
 `--check` 不一致时退出码 1，提交前跑一次。
 
+私密开发日志仓库的 `docs/` 镜像用 `python3 scripts/mirror-docs-to-devlog.py --devlog ../gitcg-devlog` 刷新，不要手改镜像。
+
 | 级别 | 例子 | 要求 |
 |---|---|---|
 | 教程 | USER-GUIDE、INSTALL | 从零能走通，含截图/入口名 |
