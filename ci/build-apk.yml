@@ -87,14 +87,15 @@ jobs:
             mkdir -p "$DATA"
             tar -xzf /tmp/data.tar.gz -C packages/standalone/public
           fi
-          ls -lh "$DATA" | head
+          ls -lh "$DATA"
 
       - name: 抓取卡图与界面素材
         shell: bash
         run: |
           set -euo pipefail
           ASSETS=packages/standalone/public/assets-local
-          n=$(find "$ASSETS" -type f 2>/dev/null | wc -l)
+          mkdir -p "$ASSETS"
+          n=$(find "$ASSETS" -type f | wc -l)
           if [ "$n" -lt 10000 ]; then
             cd packages/standalone
             node scripts/download-assets.mjs
