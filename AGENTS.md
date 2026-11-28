@@ -1,3 +1,19 @@
+## 本项目快速上手（fork：七圣召唤工具 · 离线版）
+
+- **是什么**：基于上游 gi-tcg 的离线/手游化封装 + 安卓壳 + 牌组码工具 + AI 训练器；文档索引见 `docs/README.md`。
+- **素材不入库**：先按 `docs/ASSETS.zh.md` 抓 `packages/standalone/public/assets-local` 与 `public/data`，否则页面是空壳（这不是构建失败）。
+- **构建顺序不能乱**：
+  1. `pnpm install --config.package-import-method=copy`
+  2. `pnpm --filter @gi-tcg/assets-manager build`
+  3. `pnpm --filter @gi-tcg/web-ui-core build`
+  4. `pnpm --filter @gi-tcg/deck-builder build`
+  5. `pnpm --filter @gi-tcg/standalone build`（产物在 `packages/standalone/dist`）
+- **本地验收**：`cd packages/standalone/dist && python3 -m http.server 8899`，打开 `hub.html`；截图 / DOM 尺寸 / 像素验收规范见 `docs/TESTING.zh.md`。
+- **安卓壳**：`android/README.md` + `docs/BUILD.zh.md` 第 4 节；签名 keystore 必须固定，换签名只能卸载重装。
+- **关键地图**：`packages/core`（引擎）/ `packages/ai`（AI）/ `packages/standalone`（应用）/ `android/`（壳）/ `tools/deckcode`（牌组码）/ `docs/`（文档）。
+- **硬约束**：APK 零权限、不联网、origin 固定 `http://127.0.0.1:8765`；卡牌数据当前 7.2.0 且短期不更新，升级见 `docs/MAINTENANCE.zh.md`。
+- **提交前**：`pnpm -r check`、`pnpm test`；改文档后检查代码块围栏成对。
+
 ## Commits and PR Titles
 
 Use conventional commit-style messages and PR titles: `type(scope): summary`.

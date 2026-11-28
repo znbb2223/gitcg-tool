@@ -145,9 +145,12 @@
 
 ## 六、快速开始
 
+> ⚠️ 仓库**不含**卡面素材与牌组库（版权 + 体积），不先抓会构建出一个“空壳页面”。
+> 抓取命令见 [docs/ASSETS.zh.md](./docs/ASSETS.zh.md)，落地目录见 [docs/BUILD.zh.md](./docs/BUILD.zh.md) 第 2 节。
+
 ### 网页版（开发调试）
 
-bash
+```bash
 # 安装依赖（copy 模式，避免硬链接失败）
 pnpm install --config.package-import-method=copy
 # 构建资源清单
@@ -163,15 +166,17 @@ pnpm --filter @gi-tcg/standalone build
 cd packages/standalone/dist && python3 -m http.server 8899
 # 首页    http://127.0.0.1:8899/hub.html
 # 模拟器  http://127.0.0.1:8899/app.html
+```
 
 
 ### 安卓 APK
 
-bash
+```bash
 # 把 Web 产物复制到安卓壳工程（目录名必须是 dist-lab）
 cp -r packages/standalone/dist /path/to/android/dist-lab
 # 进入安卓目录并打包（需要 android-sdk、d8、apksigner）
 cd android && ./build.sh
+```
 
 
 详细步骤、坑与版本号位置见 [docs/BUILD.zh.md](./docs/BUILD.zh.md)。

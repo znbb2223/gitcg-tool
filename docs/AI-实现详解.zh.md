@@ -109,7 +109,8 @@ export class AiPlayer implements AiPlayerIO {
       ...
     }
   };
-}```
+}
+```
 
 关键点：`state` 是引擎通过 `notify` 推送的**该玩家视角**快照（`exposeState(who, gameState)`），
 所以启发式**天然看不到对手手牌**；只有搜索为了推演，才需要"补全"隐藏信息（见第七节）。
@@ -145,7 +146,8 @@ private async decideAction(actions: readonly Action[]) {
   }
   // 默认：启发式首选 + 引擎自动选的骰子
   return { chosenActionIndex: best.index, usedDice: [...chosen.autoSelectedDice] };
-}```
+}
+```
 
 这就是整个项目的"插件架构"：
 
@@ -157,7 +159,8 @@ private async decideAction(actions: readonly Action[]) {
 
 ```ts
 // 难度噪声：easy 加 ±6 扰动，normal 只有 ±0.8
-const DIFFICULTY_NOISE = { easy: 6, normal: 0.8 };```
+const DIFFICULTY_NOISE = { easy: 6, normal: 0.8 };
+```
 
 `easy` 给评分加 ±6 的随机噪声（经常乱打），`normal` 只有 ±0.8（平手时扰动）。
 另有 `blunderRate`（按概率随机出一手），是"降强度"最直接的手段。
@@ -214,7 +217,8 @@ const speedBonus = action.isFast ? 0.25 : 0;
 // 骰子领先时更激进，落后时保守
 const diceEcon = 1 + clamp(diceGap * weights.diceEcon, -0.15, 0.25);
 // 场面落后时铺场更值钱
-const boardPressure = 1 + clamp(boardGap * weights.boardPressure, -0.2, 0.45);```
+const boardPressure = 1 + clamp(boardGap * weights.boardPressure, -0.2, 0.45);
+```
 
 再叠加**风格**（aggro/control/midrange）与**斩杀线**：
 
@@ -222,7 +226,8 @@ const boardPressure = 1 + clamp(boardGap * weights.boardPressure, -0.2, 0.45);``
 // 牌组风格：快攻加伤害、控制加治疗
 const styleDamage = style === "aggro" ? 1.15 : style === "control" ? 0.9 : 1;
 // 斩杀线：把敌方出战压到 3 血以内，额外加分
-const pressureBonus = enemyActive && summary.damage > 0 && enemyActive.health - summary.damage <= 3 ? 0.8 : 0;```
+const pressureBonus = enemyActive && summary.damage > 0 && enemyActive.health - summary.damage <= 3 ? 0.8 : 0;
+```
 
 ### 4.4 大招经济（充能逻辑）
 
@@ -237,7 +242,8 @@ if (needsEnergy) {
     ? 6 + summary.damage * 1.2 - cost * 0.05
     // 不能击杀：低分，只保留少量伤害价值
     : -0.6 + summary.damage * 0.2 - cost * 0.05;
-}```
+}
+```
 
 普通技能则是"伤害 × 各项系数 + 击杀 + 反应 + 拆盾/治疗 + 场面"的加权和。
 这套公式是**拍脑袋定的**，但每一项都有明确理由，方便后续调参（实测调参空间已经很小）。
@@ -261,7 +267,8 @@ if (needsEnergy) {
 // 六类动作，顺序是模型的一部分，改动后必须重训
 export const ACTION_KINDS = [
   "useSkill", "playCard", "switchActive", "elementalTuning", "declareEnd", "none",
-] as const;```
+] as const;
+```
 
 ### 5.2 每个候选的 7 个数值特征
 
@@ -282,7 +289,8 @@ export interface CandidateFeatures {
   tgtHp: number;
   // 是否"宣布结束" 0/1
   end: number;
-}```
+}
+```
 
 ### 5.3 拼成网络输入
 
@@ -297,7 +305,8 @@ function encodeCandidate(c, withScore) {
     // 可选：把启发式分也喂进去（模型输入变 14 维）
     ...(withScore ? [c.sc] : []),
   ];
-}```
+}
+```
 
 所以策略网输入 = **44 维局面 + 13 维动作**（`usesScore` 时 14 维）。
 这个编码必须与 `tools/train_policy.py#encode_action` **逐位一致**，否则训出来的权重对不上。
@@ -321,7 +330,8 @@ export function policyScores(weights, stateVector, candidates) {
     // 输出层只有一个分数
     return current[0] ?? 0;
   });
-}```
+}
+```
 
 `PolicyWeights` 就是一个纯 JSON：`stateDim / actionDim / mean / std / layers`，
 手机端一次前向是几微秒量级，不需要 WebGL。
@@ -371,7 +381,8 @@ while (Date.now() < deadline) {
   // 选其中线数最少的补一条
   const target = 池子里线数最少的那个;
   await playout(target, rollouts++);
-}```
+}
+```
 
 **公共随机数**是关键工程细节：同一个 `rolloutIndex` 在所有候选上使用同一个种子，
 比较候选时面对的是同一批世界，方差显著变小。
@@ -394,7 +405,8 @@ game.players[1 - who].io = { notify: () => {}, rpc: responder(1 - who, false) };
 // 打到底，拿胜负
 const winner = await game.start();
 // 截断时用局面估值；否则赢=1 平=0 输=-1
-const score = cutShort ? valueOf(game.state, who) : winner === who ? 1 : winner === null ? 0 : -1;```
+const score = cutShort ? valueOf(game.state, who) : winner === who ? 1 : winner === null ? 0 : -1;
+```
 
 - `fastReply`：推演专用廉价策略，**不读局面**，只看动作本身（伤害/击杀/反应/生成物/费用）；
 - `maxActions` 截断时（`RolloutCutoff`）用 `valueOf` 估分，避免"跑不完就丢弃"；
@@ -410,7 +422,8 @@ if (index === cachedIndex) bonus += 4;
 // 大招缺骰：优先元素调和凑骰
 if (tuningBoost > 0 && kind === "elementalTuning") bonus = tuningBoost;
 // 大招就绪：优先放大招
-if (burstBoost > 0 && isBurst) bonus = burstBoost;```
+if (burstBoost > 0 && isBurst) bonus = burstBoost;
+```
 
 另外：如果预览里已经能**直接打死一个角色**，且只有唯一一手能做到，就不再搜索，直接出。
 
@@ -422,7 +435,8 @@ const branchingScale = candidates.length <= 2 ? 0.25 : candidates.length <= 4 ? 
 // 后台算过的局面只花 35% 预算复核
 const cachedBudget = cachedIndex >= 0 ? Math.min(budgetMs, cachedBudgetMs ?? budgetMs * 0.35) : budgetMs;
 // 见过的局面按访问次数打折，再乘分支系数
-const effectiveBudget = cachedBudget * (visits === 0 ? 1 : visits === 1 ? 0.6 : 0.4) * branchingScale;```
+const effectiveBudget = cachedBudget * (visits === 0 ? 1 : visits === 1 ? 0.6 : 0.4) * branchingScale;
+```
 
 - 分支少 → 少想；
 - 见过的局面（`visits`）→ 少想；
@@ -437,7 +451,8 @@ const blended = stats.map((stat) => {
   const prior = options.heuristicScores?.get(stat.index) ?? stat.heuristic;
   // 75% 推演胜率 + 25% 先验（tanh 压到 -1..1）
   return stat.average * 0.75 + Math.tanh(prior / 4) * 0.25;
-});```
+});
+```
 
 **75% 推演胜率 + 25% 启发式先验**：低预算时防止被一两条噪声线带偏。
 
@@ -485,7 +500,8 @@ if (realisticHidden) {
     // 不再读真实手牌/牌堆
     return;
   }
-}```
+}
+```
 
 `guessEnemyCards` 的流程：
 
@@ -506,7 +522,8 @@ function handLikelihood(definition) {
   const typeBonus = type === "eventCard" ? 1.1 : type === "equipment" ? 1.0 : 0.95;
   // 两个系数相乘
   return costBonus * typeBonus;
-}```
+}
+```
 
 ### 7.3 实测与结论
 
@@ -553,7 +570,8 @@ export function nnValue(weights, features) {
   }
   // 输出压到 -1..1
   return clamp(current[0] ?? 0, -1, 1);
-}```
+}
+```
 
 训练脚本 `tools/train_value.py`：numpy MLP（64→32→1，tanh），标签是**终局胜负**，
 输出 [-1, 1] 当作"我方优势"。
@@ -630,7 +648,8 @@ export function pickDmcAction(weights, actions, state, options) {
         .reduce((best, score, i, scores) => score > scores[best] ? i : best, 0)];
   // 返回动作下标与骰子
   return { chosenActionIndex: picked.index, usedDice: actions[picked.index].autoSelectedDice ?? [] };
-}```
+}
+```
 
 权重格式与策略网**完全一致**（同一个 `PolicyWeights` JSON），所以手机端加载逻辑复用。
 
@@ -669,7 +688,8 @@ export interface MemoryEntry {
   visits: number;
   // 同一结论出现次数
   sameCount: number;
-}```
+}
+```
 
 `memoryKey(serializedState, request)` 用"局面序列化 + 候选动作指纹"做 key。
 命中且满足 `visits >= 2 && (sameCount >= 2 || confidence >= 0.7)` 时，**0ms 复用**。
@@ -691,7 +711,8 @@ export interface LearningData {
   characters: Record<number, LearningEntry>;
   // 牌组胜率
   decks: Record<string, DeckRecord>;
-}```
+}
+```
 
 - `recordGame` 每局结束更新；
 - `cardWeights` / `characterWeights` 把胜率转成 [-0.3, 0.3] 的先验，喂给 `scoreAction`；
