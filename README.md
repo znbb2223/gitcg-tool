@@ -77,7 +77,7 @@
 ### 4. 组牌器
 - 三个角色 + 30 张行动牌的正规组牌流程；
 - 按费用、元素、卡牌类型筛选，实时合法性检查并写清不合规原因；
-- 一键生成牌组码、牌组图，直接分享；
+- 一键生成牌组码、牌组图，直接分享（规格与改法见 [docs/DECK-IMAGE.zh.md](./docs/DECK-IMAGE.zh.md)）；
 - 支持「合法性检查」开关（练手时可以关掉规则限制）。
 
 ### 5. 摆盘器
@@ -197,6 +197,7 @@ cd android && ./build.sh
 | [docs/PITFALLS.zh.md](./docs/PITFALLS.zh.md) | 踩坑清单：现象 / 根因 / 解法 |
 | [docs/TRAINER.zh.md](./docs/TRAINER.zh.md) | 训练器设计、参数、经验导出与回灌 |
 | [docs/ASSETS.zh.md](./docs/ASSETS.zh.md) | 卡面 / 数据 / 牌组库抓取说明 |
+| [docs/DECK-IMAGE.zh.md](./docs/DECK-IMAGE.zh.md) | **牌组图**：入口、输出规格（尺寸/体积）、实现位置与改法 |
 | [docs/DATA.zh.md](./docs/DATA.zh.md) | 牌组码编码、牌组库条目、AI 经验包、缓存键 |
 | [docs/UI.zh.md](./docs/UI.zh.md) | 设计 token、比例规则、对局布局约束、排版层级 |
 | [docs/TESTING.zh.md](./docs/TESTING.zh.md) | 截图 / DOM 尺寸 / 像素采样 / AI 自对弈验收法 |

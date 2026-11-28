@@ -24,6 +24,7 @@
 | [USER-GUIDE.zh.md](./USER-GUIDE.zh.md) | 带图新手指南 |
 | [INSTALL.zh.md](./INSTALL.zh.md) | 安装与系统要求 |
 | [GLOSSARY.zh.md](./GLOSSARY.zh.md) | 术语表 |
+| [DECK-IMAGE.zh.md](./DECK-IMAGE.zh.md) | **牌组图**：从哪生成、输出规格、实现位置、怎么改 |
 
 ## 二、给开发者
 
@@ -57,7 +58,7 @@
 
 ## 相关文档
 
-- [AI-EXPERIMENTS.zh.md](AI-EXPERIMENTS.zh.md) · [AI-ROADMAP.zh.md](AI-ROADMAP.zh.md) · [AI-实现详解.zh.md](AI-实现详解.zh.md) · [AI.zh.md](AI.zh.md)
+- [DECK-IMAGE.zh.md](DECK-IMAGE.zh.md) · [AI-EXPERIMENTS.zh.md](AI-EXPERIMENTS.zh.md) · [AI-ROADMAP.zh.md](AI-ROADMAP.zh.md) · [AI-实现详解.zh.md](AI-实现详解.zh.md) · [AI.zh.md](AI.zh.md)
 - [AI实验交接-2026-11-27.md](AI实验交接-2026-11-27.md) · [ARCHITECTURE.zh.md](ARCHITECTURE.zh.md) · [ASSETS.zh.md](ASSETS.zh.md) · [BUILD.zh.md](BUILD.zh.md)
 - [DATA.zh.md](DATA.zh.md) · [DEVLOG.zh.md](DEVLOG.zh.md) · [GLOSSARY.zh.md](GLOSSARY.zh.md) · [INSTALL.zh.md](INSTALL.zh.md)
 - [KNOWN-ISSUES.zh.md](KNOWN-ISSUES.zh.md) · [PITFALLS.zh.md](PITFALLS.zh.md) · [ROADMAP.zh.md](ROADMAP.zh.md) · [TESTING.zh.md](TESTING.zh.md)
