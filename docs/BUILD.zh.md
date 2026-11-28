@@ -27,7 +27,12 @@ ls "$ANDROID_SDK/platforms/android-23/android.jar" 2>/dev/null || echo "缺 andr
 
 ## 0.3 云端构建（GitHub Actions）
 
-`.github/workflows/build-apk.yml` 可以在 GitHub 的 runner 上出 APK，手机只需浏览器：
+> 首次启用需要仓库有 `.github/workflows/build-apk.yml`。因为创建 workflow 文件需要 GitHub
+> token 的 `workflow` 权限，当前自动推送被拒；文件模板放在 `ci/build-apk.yml`，
+> 在 GitHub 网页「Add file → Create new file」新建 `.github/workflows/build-apk.yml`，
+> 内容从 [ci/build-apk.yml](../ci/build-apk.yml) 复制即可（只需做一次）。
+
+配置好后，可以在 GitHub 的 runner 上出 APK，手机只需浏览器：
 
 1. Fork 仓库（建议 Private）；
 2. Actions → **Build APK** → Run workflow；
