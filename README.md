@@ -201,7 +201,7 @@ cd android && ./build.sh
 | [docs/SETTINGS.zh.md](./docs/SETTINGS.zh.md) | **设置面板**：5 个设置项、默认值、存储键、与生图/布局/备份的关系 |
 | [docs/DECK-IMAGE.zh.md](./docs/DECK-IMAGE.zh.md) | **牌组图**：入口、输出规格（尺寸/体积）、实现位置与改法 |
 | [docs/DATA.zh.md](./docs/DATA.zh.md) | 牌组码编码、牌组库条目、AI 经验包、缓存键 |
-| [docs/UI.zh.md](./docs/UI.zh.md) | 设计 token、比例规则、对局布局约束、排版层级 |
+| [docs/UI.zh.md](./docs/UI.zh.md) | **界面规范**：色板/字体/组件、对局三态布局与锚点数学、素材、断点、验收 |
 | [docs/TESTING.zh.md](./docs/TESTING.zh.md) | 截图 / DOM 尺寸 / 像素采样 / AI 自对弈验收法 |
 | [docs/ROADMAP.zh.md](./docs/ROADMAP.zh.md) | 路线图 |
 | [docs/USER-GUIDE.zh.md](./docs/USER-GUIDE.zh.md) | 带图新手指南：从首页到打一局 |

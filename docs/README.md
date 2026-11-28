@@ -39,7 +39,7 @@
 | [PITFALLS.zh.md](./PITFALLS.zh.md) | 24 条踩坑清单 |
 | [TESTING.zh.md](./TESTING.zh.md) | 截图 / DOM 尺寸 / 像素采样 / AI 自对弈验收 |
 | [DATA.zh.md](./DATA.zh.md) | 牌组码编码、牌组库条目、经验包、缓存键 |
-| [UI.zh.md](./UI.zh.md) | 设计 token、比例规则、对局布局约束、排版 |
+| [UI.zh.md](./UI.zh.md) | **界面规范**：色板/字体/组件、对局三态布局与锚点数学、素材、断点、验收 |
 | [TRAINER.zh.md](./TRAINER.zh.md) | 训练器设计、菜单、经验导出与回灌 |
 | [ASSETS.zh.md](./ASSETS.zh.md) | 卡面 / 数据 / 牌组库抓取 |
 | [AI.zh.md](./AI.zh.md) | AI 原理 / 强度 / 旋钮 / 局限 |
