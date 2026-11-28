@@ -25,7 +25,28 @@ which aapt zipalign apksigner
 ls "$ANDROID_SDK/platforms/android-23/android.jar" 2>/dev/null || echo "缺 android.jar"
 ```
 
-## 0.5 一键构建（推荐先试这个）
+## 0.4 单文件构建（给别人用）
+
+对方手里只需要一个文件：**`build-gitcg-apk.sh`**。
+
+```bash
+sh build-gitcg-apk.sh
+# 可选：--out 目录 / --work 工作目录 / --keystore 原密钥 / --check 只体检
+```
+
+它会：
+
+1. 检测环境，按需安装 Node 22+、pnpm、JDK17、aapt/apksigner/zipalign、d8、android.jar
+   （Debian/Ubuntu 用 apt，Termux 用 pkg，缺 d8/android.jar 时从 Google 官方地址下载）；
+2. 从 GitHub 拉 **最新源码 tarball**（不需要 git、不需要先 clone）；
+3. 下载牌组库数据包 [`data-7.2.0`](https://github.com/znbb2223/gitcg-tool/releases/download/data-7.2.0/data-7.2.0.tar.gz)
+   并抓取卡图/UI 素材（约 150MB，一次即可）；
+4. 调 `build-oneclick.sh` 构建、打包、校验，输出 APK。
+
+> MT 管理器的 Android sh 没有 Node/JDK，脚本会体检后提示改用 Termux/proot；
+> 不支持的环境会明确报错，不会静默失败。
+
+## 0.5 仓库内一键构建（开发者在 clone 目录里用）
 
 仓库根目录的 `build-oneclick.sh` 把「抓素材 → 装依赖 → 构建 → 打 APK → 校验」串成一条命令：
 

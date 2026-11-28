@@ -3,6 +3,21 @@
 > 本仓库**不包含**游戏美术素材与社区牌组数据（涉及版权与体积），
 > 只保留抓取/生成脚本。本文说明每一步怎么跑、产物落在哪。
 
+## 0. 快速拿到完整数据（推荐）
+
+牌组库/筛选数据已打包放在公开 Release：
+
+- https://github.com/znbb2223/gitcg-tool/releases/download/data-7.2.0/data-7.2.0.tar.gz
+
+```bash
+# 解压到 public/data（5 个 JSON，解压后约 12.9MB）
+curl -fL -o /tmp/data.tar.gz https://github.com/znbb2223/gitcg-tool/releases/download/data-7.2.0/data-7.2.0.tar.gz
+mkdir -p packages/standalone/public/data
+tar -xzf /tmp/data.tar.gz -C packages/standalone/public
+```
+
+`build-gitcg-apk.sh` 会自动下载它，不需要手动处理。
+
 ## 1. 卡面 / 图标 / 界面图
 
 上游脚本位置：`packages/standalone/scripts/`
