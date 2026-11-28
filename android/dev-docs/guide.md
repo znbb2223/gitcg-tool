@@ -1,3 +1,5 @@
+> 目录总览与最新状态见同目录 `README.md`；数据合并见 `MAINTENANCE.md`。
+
 ---
 name: genius-invokation
 description: 七圣召唤（Genius Invokation）项目的接手与迭代：离线资源镜像、20:9 手游化布局、原版皮肤、安卓 WebView 壳打包、AI 搜索/训练/经验库版本化、以及根据用户提供的真实卡组做克制推演与打法分析。用户说「七圣召唤」「雨酱牌」「打不过这个卡组」「重构打包新版本」时加载。

@@ -19,6 +19,19 @@
 - `minSdk 29`（安卓 10+），`targetSdk 34`；
 - `usesCleartextTraffic="true"` 必须保留，否则拦截的 http origin 会被系统拦。
 
+## APK 内置开发资料（assets/dev-docs/）
+
+打包时会把 `android/dev-docs/` 下的 `.md` / `.txt` 全部拷进 APK 的 **`assets/dev-docs/`**。
+把 APK 后缀改成 `.zip` 解包，就能在 `assets/dev-docs/` 里看到：
+
+- `README.md`：当前状态、已知 BUG、牌组码工具、免责声明与致谢；
+- `MAINTENANCE.md`：7.2.0 → 7.3.0 数据合并（两条路线）；
+- `KNOWN-ISSUES.md`：已知问题与规避方式；
+- `build.md`、`guide.md`、`handoff.md`、`decklib-update.md` 等历史资料。
+
+> 这些资料随 APK 一起分发，方便其他开发者或 AI 接手；
+> 修改后重新跑 `android/build.sh` 才会进入新的 APK。
+
 ## 从零构建 APK
 
 ### 0. 工具链
@@ -129,7 +142,7 @@ Web 侧直接起静态服务更省事，见 `../docs/BUILD.zh.md` 第 3 节（�
 | `src/SettingsActivity.java` | 设置页（布局模式、方向、导入 AI 数据） |
 | `src/AndroidManifest.xml` | 版本号、屏幕方向、零权限声明 |
 | `build.sh` | aapt + d8 + zipalign + apksigner 一键打包（路径可用环境变量覆盖） |
-| `dev-docs/` | 构建、数据更新、交接文档 |
+| `dev-docs/` | 构建、数据更新、交接文档；打包进 APK 的 `assets/dev-docs/` |
 
 
 ---

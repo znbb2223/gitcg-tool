@@ -207,6 +207,9 @@ cd android && ./build.sh
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | 贡献指南 |
 | [SECURITY.md](./SECURITY.md) | 隐私与权限声明 |
 
+> **APK 内也带一份开发资料**：解包 APK（改后缀为 zip）后看 `assets/dev-docs/`，
+> 里面有当前状态、已知 BUG、牌组码工具、7.3.0 数据合并与免责声明。
+
 ## 八、FAQ
 
 ### Q：这个工具还会更新吗？后续版本怎么办？
