@@ -81,6 +81,13 @@ print(len(names))
 PY
 ```
 
+## 5.5 构建相关
+
+| 事实 | 值 | 出处 / 校验 |
+|---|---|---|
+| 牌组库数据包 | `data-7.2.0.tar.gz`，3.8MB（解压 12.9MB / 5 个 JSON） | Release `data-7.2.0`；CI 与手动构建使用 |
+| 云端构建 | GitHub Actions `Build APK`，产物为 artifact | `.github/workflows/build-apk.yml` |
+
 ## 6. 文档自身的一致性
 
 | 事实 | 值 | 校验 |

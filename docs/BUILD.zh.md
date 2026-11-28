@@ -25,6 +25,21 @@ which aapt zipalign apksigner
 ls "$ANDROID_SDK/platforms/android-23/android.jar" 2>/dev/null || echo "缺 android.jar"
 ```
 
+## 0.3 云端构建（GitHub Actions）
+
+`.github/workflows/build-apk.yml` 可以在 GitHub 的 runner 上出 APK，手机只需浏览器：
+
+1. Fork 仓库（建议 Private）；
+2. Actions → **Build APK** → Run workflow；
+3. 完成后下载 artifact `gitcg-apk-*`（APK + SHA256SUMS）。
+
+流程：apt 装 aapt/apksigner/zipalign/android-sdk-platform-23 → 缓存/下载素材与数据 →
+`build-oneclick.sh --skip-fetch` → 校验 → 上传 artifact。
+
+- runner 自带 Android SDK，`d8` 取自 `$ANDROID_HOME/build-tools`；
+- 数据包从 Release `data-7.2.0` 下载；素材从上游抓取并缓存；
+- CI 用临时签名，**不能覆盖安装旧版**；要覆盖请在 workflow 里配置自己的 keystore。
+
 ## 0.4 仓库内一键构建（在 clone 目录里用）
 
 仓库根目录的 `build-oneclick.sh` 把「抓素材 → 装依赖 → 构建 → 打 APK → 校验」串成一条命令：

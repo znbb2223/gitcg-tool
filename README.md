@@ -163,6 +163,16 @@
 > ⚠️ 仓库**不含**卡面素材与牌组库（版权 + 体积），不先抓会构建出一个“空壳页面”。
 > 抓取命令见 [docs/ASSETS.zh.md](./docs/ASSETS.zh.md)，落地目录见 [docs/BUILD.zh.md](./docs/BUILD.zh.md) 第 2 节。
 
+### 云端构建（GitHub Actions，手机也能用）
+
+不需要本地环境，手机上点几下即可：
+
+1. Fork 本仓库（**建议设为 Private**，构建产物含游戏素材，只给自己用）；
+2. 在自己 fork 的 **Actions → Build APK → Run workflow**；
+3. 等约 10 分钟，在本次运行页面底部下载 `gitcg-apk-*` artifact（含 APK 与 SHA256）。
+
+首次运行会抓约 150MB 素材，之后走 Actions 缓存。构建用临时签名，不能覆盖安装旧版。
+
 ### 一键构建（开发者）
 
 ```bash
