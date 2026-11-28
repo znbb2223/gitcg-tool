@@ -163,19 +163,24 @@
 > ⚠️ 仓库**不含**卡面素材与牌组库（版权 + 体积），不先抓会构建出一个“空壳页面”。
 > 抓取命令见 [docs/ASSETS.zh.md](./docs/ASSETS.zh.md)，落地目录见 [docs/BUILD.zh.md](./docs/BUILD.zh.md) 第 2 节。
 
-### 网页版（开发调试）
+### 一键构建（推荐）
 
 ```bash
-# 安装依赖（copy 模式，避免硬链接失败）
+# 全流程：抓素材 → 装依赖 → 构建 → 打 APK → 校验（手机上先看脚本体检输出）
+sh build-oneclick.sh
+# 不联网：用旧 APK 里的素材重建
+sh build-oneclick.sh --from-apk 旧包.apk
+# 只构建 Web
+sh build-oneclick.sh --web-only
+```
+
+### 手动构建（开发调试）
+
+```bash
+# 安装依赖（copy 模式，避免硬链接失败；手机/arm64 先设 PUPPETEER_SKIP_DOWNLOAD=1）
 pnpm install --config.package-import-method=copy
-# 构建资源清单
-pnpm --filter @gi-tcg/assets-manager build
-# 构建对局界面组件
-pnpm --filter @gi-tcg/web-ui-core build
-# 构建组牌器组件
-pnpm --filter @gi-tcg/deck-builder build
-# 构建独立应用（产物在 packages/standalone/dist）
-pnpm --filter @gi-tcg/standalone build
+# 按依赖拓扑构建（typings/data/core/ui/standalone 一次到位）
+pnpm --filter "@gi-tcg/standalone..." build
 
 # 本地起服务看效果
 cd packages/standalone/dist && python3 -m http.server 8899

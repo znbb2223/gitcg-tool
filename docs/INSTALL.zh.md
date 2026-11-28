@@ -26,21 +26,13 @@
 ## 电脑 / 网页版
 
 ```bash
-# 安装依赖：copy 模式，避免 pnpm 硬链接在容器/手机上失败
-pnpm install --config.package-import-method=copy
-# 构建资源清单（卡牌、图标索引）
-pnpm --filter @gi-tcg/assets-manager build
-# 构建对局界面组件（web-ui-core）
-pnpm --filter @gi-tcg/web-ui-core build
-# 构建组牌器组件
-pnpm --filter @gi-tcg/deck-builder build
-# 构建独立应用，产物在 packages/standalone/dist
-pnpm --filter @gi-tcg/standalone build
+# 一键：抓素材 → 构建 → 打 APK（详见 docs/BUILD.zh.md 0.5 节）
+sh build-oneclick.sh
 
-# 进入 Web 产物目录
-cd packages/standalone/dist
-# 起本地静态服务器，浏览器打开 http://127.0.0.1:8899/hub.html
-python3 -m http.server 8899
+# 或手动：
+pnpm install --config.package-import-method=copy
+pnpm --filter "@gi-tcg/standalone..." build
+cd packages/standalone/dist && python3 -m http.server 8899
 ```
 
 打开 `http://127.0.0.1:8899/hub.html`。

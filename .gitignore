@@ -20,3 +20,7 @@ promo/output/
 promo/frames/
 promo/frames2/
 promo/media/
+android/gitcg.jks
+build-oneclick-*.log
+out/
+.oneclick-extract/

@@ -25,6 +25,22 @@ which aapt zipalign apksigner
 ls "$ANDROID_SDK/platforms/android-23/android.jar" 2>/dev/null || echo "缺 android.jar"
 ```
 
+## 0.5 一键构建（推荐先试这个）
+
+仓库根目录的 `build-oneclick.sh` 把「抓素材 → 装依赖 → 构建 → 打 APK → 校验」串成一条命令：
+
+```bash
+sh build-oneclick.sh                  # 全流程，产物默认落到 /sdcard/Download/DSH-Go/
+sh build-oneclick.sh --check          # 只体检工具链
+sh build-oneclick.sh --from-apk 旧包.apk   # 不联网：从旧 APK 提取素材重建
+sh build-oneclick.sh --web-only       # 只出 Web zip
+```
+
+- 手机上点 `一键构建.sh` 等价；
+- MT 管理器内置终端只有 Android sh（无 Node/JDK/aapt），脚本会先体检并提示改用 Termux/proot；
+- 依赖自检/自动安装：`--deps`（apt / pkg）；
+- 签名：默认 `android/gitcg.jks`，没有会自动生成新密钥（**不能覆盖安装旧版**），正式包请用 `--keystore` 指定原密钥。
+
 ## 1. 获取代码与依赖
 
 ```bash
@@ -38,6 +54,7 @@ pnpm install --config.package-import-method=copy
 - 国内网络建议配镜像：`pnpm config set registry https://registry.npmmirror.com`。
 - `ERR_PNPM_IGNORED_BUILDS` 可以忽略（只是原生构建脚本没跑）。
 - 容器/手机上 pnpm 默认的 hardlink 可能失败，所以**必须**带 `--config.package-import-method=copy`。
+- 手机/arm64 上装依赖前先设 `PUPPETEER_SKIP_DOWNLOAD=1`，否则 puppeteer 会尝试下载 Chromium 并失败（一键脚本已内置）。
 
 ## 2. 素材与数据（必读，仓库不含）
 
@@ -51,20 +68,18 @@ pnpm install --config.package-import-method=copy
 
 > 不抓素材也能构建成功，只是页面基本是空壳——**这不是构建失败**，先确认素材目录有没有东西。
 
-## 3. 构建 Web（顺序不能乱）
+## 3. 构建 Web（按依赖拓扑）
 
 ```bash
-# 1) 构建资源清单（必须最先）
-pnpm --filter @gi-tcg/assets-manager build
-# 2) 构建对局界面组件
-pnpm --filter @gi-tcg/web-ui-core build
-# 3) 构建组牌器组件
-pnpm --filter @gi-tcg/deck-builder build
-# 4) 构建独立应用（最后一步，产物在 dist）
-pnpm --filter @gi-tcg/standalone build
+# 一条命令按依赖顺序构建 lang=standalone 及其全部依赖（typings/data/core/ui/...）
+pnpm --filter "@gi-tcg/standalone..." build
 ```
 
-顺序错误的典型报错：`Cannot find module '@gi-tcg/web-ui-core'` 或类型文件缺失。
+> 只手动跑 `assets-manager → web-ui-core → deck-builder → standalone` 会漏掉 `@gi-tcg/typings`
+> 等依赖包，干净 clone 上会报 `Cannot find module '@gi-tcg/typings/dist/index.js'`。
+> 一键脚本里保留了这组显式顺序作为兜底。
+
+产物在 `packages/standalone/dist/`（含 public 下已就绪的 `assets-local/`、`data/`，`du` 约 240MB）。
 产物在 `packages/standalone/dist/`：
 
 - `index.html` = **模拟器**（游戏页，壳里要改名成 `app.html`）
@@ -208,11 +223,11 @@ pnpm --filter @gi-tcg/standalone build
 # 2) 组装完整 Web 目录（dist 本身只有 27MB，不含卡图）
 rm -rf /tmp/web-full
 cp -a packages/standalone/dist /tmp/web-full
-# 卡图/资源：解包约 149MB（按 4K 块算约 186MB，小文件多）
+# 卡图/资源：解包约 149MB（du 磁盘占用约 202MB，小文件多）
 cp -a /path/to/dist-lab/assets-local /tmp/web-full/
 # 牌组库数据：约 13MB，缺了会“牌组库数据读取失败”
 cp -a /path/to/dist-lab/data /tmp/web-full/
-# 3) 确认体积，完整 assets/web 解包约 189MB
+# 3) 确认体积，完整 assets/web 解包约 189MB（du 约 240MB）
 du -sh /tmp/web-full
 ```
 
@@ -262,7 +277,7 @@ unzip -p app.apk assets/web/about.html | grep -c "免责声明"
 |---|---|
 | APK（含卡图、牌组库） | 约 150MB |
 | 只有 Web 产物（错误） | 约 6MB |
-| 卡图 `assets-local` | 约 **149MB**（解包字节；按文件系统块算约 186MB） |
+| 卡图 `assets-local` | 约 **149MB**（解包字节）/ **202MB**（`du` 磁盘占用） |
 | 牌组库 `data` | 约 13MB（12.9MB 实测） |
 
 ### 10.7 文件清单对拍

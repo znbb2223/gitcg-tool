@@ -2,12 +2,10 @@
 
 - **是什么**：基于上游 gi-tcg 的离线/手游化封装 + 安卓壳 + 牌组码工具 + AI 训练器；文档索引见 `docs/README.md`。
 - **素材不入库**：先按 `docs/ASSETS.zh.md` 抓 `packages/standalone/public/assets-local` 与 `public/data`，否则页面是空壳（这不是构建失败）。
-- **构建顺序不能乱**：
-  1. `pnpm install --config.package-import-method=copy`
-  2. `pnpm --filter @gi-tcg/assets-manager build`
-  3. `pnpm --filter @gi-tcg/web-ui-core build`
-  4. `pnpm --filter @gi-tcg/deck-builder build`
-  5. `pnpm --filter @gi-tcg/standalone build`（产物在 `packages/standalone/dist`）
+- **构建**：`sh build-oneclick.sh`（一条龙出 APK）；手动构建用
+  `pnpm install --config.package-import-method=copy && pnpm --filter "@gi-tcg/standalone..." build`
+  （按依赖拓扑构建，只手动跑 4 个 filter 会漏 `@gi-tcg/typings`）。产物在 `packages/standalone/dist`。
+- **手机/arm64**：装依赖前设 `PUPPETEER_SKIP_DOWNLOAD=1`；MT 内置终端无 Node/JDK，需 Termux/proot。
 - **本地验收**：`cd packages/standalone/dist && python3 -m http.server 8899`，打开 `hub.html`；截图 / DOM 尺寸 / 像素验收规范见 `docs/TESTING.zh.md`。
 - **安卓壳**：`android/README.md` + `docs/BUILD.zh.md` 第 4 节；签名 keystore 必须固定，换签名只能卸载重装。
 - **关键地图**：`packages/core`（引擎）/ `packages/ai`（AI）/ `packages/standalone`（应用）/ `android/`（壳）/ `tools/deckcode`（牌组码）/ `docs/`（文档）。

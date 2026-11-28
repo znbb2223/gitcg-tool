@@ -38,13 +38,13 @@ grep -o '"games":[0-9]*' packages/ai/src/data/experience-seed.ts | head -1
 
 | 事实 | 值 | 说明 |
 |---|---|---|
-| `assets-local`（卡图/UI） | **15,111 个文件 / 148.8 MB** | 解包字节；按 4K 块算约 **185.6 MB**（小文件多，`du` 会更大） |
-| `assets/web`（完整 Web 目录） | **189.3 MB** | 解包字节（= assets-local + data + JS/CSS） |
+| `assets-local`（卡图/UI） | **15,111 个文件 / 148.8 MB** | 解包字节；`du` 磁盘占用约 **202 MB** |
+| `assets/web`（完整 Web 目录） | **189.3 MB** | 解包字节；`du` 约 **240 MB**（含 dist） |
 | APK 文件 | **156.3 MB** | 压缩后的 APK 本体 |
 | 牌组图 JPG（默认） | 1404×3715，约 **0.85 MB** | `encodeShareImage()` 缩 65% + JPEG q0.82 |
 | 牌组图 PNG（高画质） | 2160×5716，约 **10.5 MB** | 原尺寸 `toDataURL("image/png")` |
 
-> 之前文档写的「202MB 卡图」是块占用/旧统计口径，不是解包字节；两者不要混用。
+> 202MB / 240MB 是 `du` 磁盘占用口径，149MB / 189MB 是解包字节口径；报体积时写清用哪个。
 
 ```bash
 unzip -l 七圣召唤工具.apk | awk '/assets\/web\/assets-local\//{n++;s+=$1}END{printf "%d files %.1f MB\n",n,s/1e6}'
