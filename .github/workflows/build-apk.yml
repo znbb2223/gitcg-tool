@@ -73,7 +73,7 @@ jobs:
           path: |
             packages/standalone/public/assets-local
             packages/standalone/public/data
-          key: gitcg-assets-7.2.0-v1
+          key: gitcg-assets-7.2.0-v2
           restore-keys: gitcg-assets-
 
       - name: 下载牌组库数据
@@ -95,18 +95,32 @@ jobs:
           set -euo pipefail
           ASSETS="$PWD/packages/standalone/public/assets-local"
           mkdir -p "$ASSETS"
-          n=$(find "$ASSETS" -type f | wc -l)
-          if [ "$n" -lt 10000 ]; then
+          collect() {
             (
               cd packages/standalone
-              node scripts/download-assets.mjs
-              node scripts/download-datum.mjs
-              timeout 1200 node scripts/download-full.mjs || echo "全尺寸图抓取超时/失败，继续"
+              node scripts/download-assets.mjs || true
+              node scripts/download-datum.mjs || true
+              node scripts/download-cardface.mjs || true
+              timeout 1800 node scripts/download-full.mjs || true
             )
+          }
+          check() {
+            n=$(find "$ASSETS" -type f | wc -l)
+            faces=$(find "$ASSETS" -path '*/cardFace/full.webp' | wc -l)
+            ui=$(find "$ASSETS/ui" -type f 2>/dev/null | wc -l)
+            datum=$(find "$ASSETS/api/v5/datum" -name '*.json' 2>/dev/null | wc -l)
+            echo "素材：总 $n / 卡面 $faces / UI $ui / datum $datum"
+            [ "$n" -ge 14000 ] && [ "$faces" -ge 800 ] && [ "$ui" -ge 100 ] && [ "$datum" -ge 4000 ]
+          }
+          if ! check; then
+            collect
+            if ! check; then
+              echo "首次抓取不完整，重试一轮（补齐失败项）"
+              collect
+              check || { echo "素材仍不完整，终止"; exit 1; }
+            fi
           fi
-          n=$(find "$ASSETS" -type f | wc -l)
-          echo "素材文件数：$n"
-          [ "$n" -ge 10000 ] || { echo "素材不足 10000 个"; exit 1; }
+          echo "素材校验通过"
 
       - name: 构建 Web + 打包 APK
         shell: bash
