@@ -213,37 +213,28 @@ cd android && ./build.sh
 ## 八、FAQ
 
 ### Q：这个工具还会更新吗？后续版本怎么办？
-**A：短期不再更新。** 当前只含 **7.2.0** 数据；原神官方或上游「雨酱牌」更新到 7.3.0 后，
+**A：** 短期不再更新。当前只含 **7.2.0** 数据；原神官方或上游「雨酱牌」更新到 7.3.0 后，
 需要使用者自己按 [维护与数据更新](./docs/MAINTENANCE.zh.md) 合并——里面分别写了
 “上游已更新”和“上游没更新、自己按机制补”两条路线。已知 BUG 见 [KNOWN-ISSUES](./docs/KNOWN-ISSUES.zh.md)。
 
+### Q：为什么不直接发完整源码包（含素材）？
+**A：** 素材版权归米哈游，仓库只放代码与抓取脚本，自己构建时按文档拉取即可。
 
-
-**Q：为什么不直接发完整源码包（含素材）？**
-素材版权归米哈游，仓库只放代码与抓取脚本，自己构建时按文档拉取即可。
-
-**Q：为什么 APK 连 INTERNET 权限都没有？**
-安卓壳用 `WebViewClient.shouldInterceptRequest` 从 `assets/` 直接出内容，
+### Q：为什么 APK 连 INTERNET 权限都没有？
+**A：** 安卓壳用 `WebViewClient.shouldInterceptRequest` 从 `assets/` 直接出内容，
 不需要网络栈；origin 固定 `http://127.0.0.1:8765` 以便 localStorage 有稳定域。
 
-**Q：AI 有多强？**
-诚实定位：不比熟练玩家强，靠搜索预算和经验库堆出来的稳定度；
+### Q：AI 有多强？
+**A：** 诚实定位：不比熟练玩家强，靠搜索预算和经验库堆出来的稳定度；
 胜率数据来自自我对弈，不含人类对局。**AI 研究线已于 2026-11-28 封存**，
 最终结论见 [AI 终结报告](./artifacts/ai/AI-终结报告-2026-11-28.md)。
+搜索版对启发式约 60%，DMC 尝试（0.1ms/手）只到 150ms 搜索水平，未达上线门槛。
 
-**Q：AI 到底什么水平？**
-比随便打强，不如熟练玩家；原理、强度旋钮和局限都写在
-[docs/AI.zh.md](./docs/AI.zh.md)，已知问题见 [docs/KNOWN-ISSUES.zh.md](./docs/KNOWN-ISSUES.zh.md)。
-实测数据、失败清单与复现方法见 [artifacts/ai/README.md](./artifacts/ai/README.md)。
-现状：搜索版对启发式约 60%，对熟练玩家仍处下风；DMC 尝试（0.1ms/手）只到 150ms 搜索水平，
-未达上线门槛，已封存。
-
-**Q：能在电脑上用吗？**
-可以，用网页版（`pnpm --filter @gi-tcg/standalone dev`）或构建后本地起服务。
+### Q：能在电脑上用吗？
+**A：** 可以，用网页版（`pnpm --filter @gi-tcg/standalone dev`）或构建后本地起服务。
 
 ## 九、致谢
 
-- **项目起源：[雨酱牌]**——这个项目最初来自雨酱牌；
 - **主要编程与代码工作：DSH（DeepSeek Harness）**——开发、实验编排、训练、文档与工具链均由 DSH 完成，特此致谢；
 - 规则引擎与卡牌数据：[piovium/genius-invokation](https://github.com/piovium/genius-invokation) 及其贡献者；
 - 卡牌美术、图标、界面素材：miHoYo / HoYoverse；
@@ -264,7 +255,6 @@ cd android && ./build.sh
 
 ### 特别感谢
 
-- **雨酱牌**：本项目的起点，感谢其先期工作与开源精神；
 - **piovium/genius-invokation** 及贡献者：提供引擎、卡牌数据与规则；
 - **DSH（DeepSeek Harness）**：主要开发、实验编排、训练、文档与工具链；
 - 牌组广场与米游社的牌组作者，以及所有提 Issue / 反馈的玩家。

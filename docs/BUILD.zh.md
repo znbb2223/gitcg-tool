@@ -189,11 +189,91 @@ unzip -p gitcg.apk "$W" | grep -c realisticHidden
 
 | 位置 | 内容 |
 |---|---|
-| `packages/standalone/dist/` | Web 产物（240MB，含素材与牌组库） |
+| `packages/standalone/dist/` | Web 产物（约 27MB；素材与牌组库需另行拷入） |
 | `android/dist-lab/` | 安卓壳要打包的 Web 目录（对调过入口） |
 | `android/build/gitcg.apk` | 最终签名安装包（约 150MB） |
 | `android/gitcg.jks` | 签名密钥（**必须自己备份**） |
 | `packages/standalone/public/` | 素材与数据的源目录（不入 git） |
+
+## 10. APK 打包检查清单（0.11.158 踩坑）
+
+这次重打包踩了三个坑，全部是“打出来的 APK 能装，但内容不对”，记在这里。
+
+### 10.1 必须把 `assets-local` 和 `data` 放进 Web 目录
+
+```bash
+# 1) 先构建 Web 产物
+pnpm --filter @gi-tcg/standalone build
+
+# 2) 组装完整 Web 目录（dist 本身只有 27MB，不含卡图）
+rm -rf /tmp/web-full
+cp -a packages/standalone/dist /tmp/web-full
+# 卡图/资源：约 202MB
+cp -a /path/to/dist-lab/assets-local /tmp/web-full/
+# 牌组库数据：约 13MB，缺了会“牌组库数据读取失败”
+cp -a /path/to/dist-lab/data /tmp/web-full/
+# 3) 确认体积，完整应约 240MB
+du -sh /tmp/web-full
+```
+
+> 只打 `dist` 会得到 **6MB 的假 APK**：能开机，但卡图全空、牌组库报错。
+
+### 10.2 `build.sh` 认的是 `KEYSTORE`，不是 `KS`
+
+```bash
+# 正确：显式指定旧签名，才能覆盖安装
+WEB=/tmp/web-full OUT=/tmp/apk KEYSTORE=/path/to/gitcg.jks bash android/build.sh
+
+# 错误：脚本会自己新建 android/gitcg.jks，签名对不上，更新失败
+KS=/path/to/gitcg.jks bash android/build.sh
+```
+
+### 10.3 启动页固定为 `hub.html`
+
+`MainActivity` 里两处 `loadUrl`（启动与返回兜底）都必须是
+`APP_ORIGIN + "/hub.html"`；用 `/` 或 `/index.html` 会直接进“对局配置”。
+
+### 10.4 版本号与构建号一起改
+
+- `android/src/AndroidManifest.xml` 的 `versionCode` 必须递增（否则覆盖安装失败）；
+- `packages/standalone/hub.html` 的 `#buildNo` 与 `about.html` 的“构建”要同步；
+- 版本名建议与 Release tag 一致。
+
+### 10.5 打包后验证（至少跑一遍）
+
+```bash
+# 权限：应该没有任何输出
+aapt dump badging app.apk | grep uses-permission
+# 版本/包名/SDK
+aapt dump badging app.apk | grep -E "^package|sdkVersion|targetSdkVersion"
+# 对齐
+zipalign -c -v 4 app.apk | tail -1
+# 签名证书（必须与已安装版本一致）
+apksigner verify --print-certs app.apk | grep SHA-256
+# 关键资源
+unzip -l app.apk | grep -E "assets/web/(hub|about)\.html|assets/web/data/deck-library\.json|assets/dev-docs/"
+# 免责声明/致谢
+unzip -p app.apk assets/web/about.html | grep -c "免责声明"
+```
+
+### 10.6 体积对照
+
+| 内容 | 正常体积 |
+|---|---|
+| APK（含卡图、牌组库） | 约 150MB |
+| 只有 Web 产物（错误） | 约 6MB |
+| 卡图 `assets-local` | 约 202MB |
+| 牌组库 `data` | 约 13MB |
+
+### 10.7 文件清单对拍
+
+拿上一版正常 APK 和新 APK 的 `assets/` 列表做 `comm`，除已知废弃文件外不应有缺失：
+
+```bash
+unzip -l old.apk | awk '{print $4}' | grep '^assets/' | sort > /tmp/old.txt
+unzip -l new.apk | awk '{print $4}' | grep '^assets/' | sort > /tmp/new.txt
+comm -23 /tmp/old.txt /tmp/new.txt
+```
 
 
 ---

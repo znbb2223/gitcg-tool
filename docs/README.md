@@ -10,8 +10,8 @@
 
 > 状态：2026-11-28 收尾。**当前只含 7.2.0 数据，短期不再更新**；版本合并见 [MAINTENANCE.zh.md](./MAINTENANCE.zh.md)。
 
-> **致谢**：项目起源「**雨酱牌**」；规则引擎与卡牌数据来自
-> [piovium/genius-invokation](https://github.com/piovium/genius-invokation)（AGPL-3.0）；
+> **致谢**：规则引擎与卡牌数据来自
+> [piovium/genius-invokation](https://github.com/piovium/genius-invokation)（AGPL-3.0，即「雨酱牌」）；
 > 主要开发、实验编排、训练、文档与工具链由 **DSH（DeepSeek Harness）** 完成。
 
 ## 一、给使用者
@@ -32,6 +32,7 @@
 | [ARCHITECTURE.zh.md](./ARCHITECTURE.zh.md) | 包结构、对局数据流、布局三态、安卓壳、AI 结构 |
 | [BUILD.zh.md](./BUILD.zh.md) | 构建顺序、产物整理、APK 打包、版本号、失败对照 |
 | [MAINTENANCE.zh.md](./MAINTENANCE.zh.md) | **7.2.0 → 7.3.0 数据合并**、上游没更新时怎么自己补、已知 BUG、牌组码工具 |
+| [BACKUP-SERVER-2026-11.md](./BACKUP-SERVER-2026-11.md) | 云服务器释放前的完整 DMC 样本与实验日志备份 |
 | [DEVLOG.zh.md](./DEVLOG.zh.md) | 逐版本迭代记录（现象 → 根因 → 修法） |
 | [PITFALLS.zh.md](./PITFALLS.zh.md) | 24 条踩坑清单 |
 | [TESTING.zh.md](./TESTING.zh.md) | 截图 / DOM 尺寸 / 像素采样 / AI 自对弈验收 |
