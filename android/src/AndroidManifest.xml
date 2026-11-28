@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.dsh.gitcg.lab"
-    android:versionCode="276"
+    android:versionCode="279"
     android:versionName="0.11.158-7.2.0">
 
     <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="34" />

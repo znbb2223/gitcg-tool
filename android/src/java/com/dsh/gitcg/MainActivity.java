@@ -342,7 +342,7 @@ public class MainActivity extends Activity {
         updateSafeArea();
 
         try {
-            webView.loadUrl(APP_ORIGIN + "/");
+            webView.loadUrl(APP_ORIGIN + "/hub.html");
         } catch (Exception e) {
             webView.loadData("<h2>内置资源启动失败</h2><pre>" + e + "</pre>", "text/html", "utf-8");
         }
@@ -610,7 +610,7 @@ public class MainActivity extends Activity {
                     if (webView.canGoBack()) {
                         webView.goBack();
                     } else {
-                        webView.loadUrl(APP_ORIGIN + "/index.html");
+                        webView.loadUrl(APP_ORIGIN + "/hub.html");
                     }
                 });
     }
