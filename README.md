@@ -37,7 +37,8 @@
 
 > **🧩 非常规牌组码**：首页那张“3 个相同角色 + 30 张相同卡”的牌组图，是用
 > **[牌组码工具](./tools/deckcode/README.md)** 生成的**非常手段**牌组，不是正常可对战牌组；
-> 想自己生成/解码，见工具目录里的 4 个版本（sh / cmd / Windows / HTML）。
+> 想自己生成/解码，见工具目录里的 4 个版本（sh / cmd / Windows / HTML）；
+> 牌组图本身的规格与生成方式见 **[DECK-IMAGE.zh.md](./docs/DECK-IMAGE.zh.md)**。
 
 ---
 
@@ -115,7 +116,7 @@
 </tr>
 </table>
 
-<p align="center"><img src="./docs/screenshots/09-deck-image.png" width="280"><br/><sub>牌组图（由牌组码工具生成的非常规整活牌组）</sub></p>
+<p align="center"><img src="./docs/screenshots/09-deck-image.png" width="280"><br/><sub>牌组图（由牌组码工具生成的非常规整活牌组）· <a href="./docs/DECK-IMAGE.zh.md">怎么生成 / 规格与改法</a></sub></p>
 
 ## 四、整体结构
 
