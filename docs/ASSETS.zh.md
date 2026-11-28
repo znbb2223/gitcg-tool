@@ -3,20 +3,6 @@
 > 本仓库**不包含**游戏美术素材与社区牌组数据（涉及版权与体积），
 > 只保留抓取/生成脚本。本文说明每一步怎么跑、产物落在哪。
 
-## 0. 牌组库数据（构建必需）
-
-牌组库/筛选数据打包放在公开 Release，CI 与手动构建都用它：
-
-```bash
-curl -fL -o /tmp/data.tar.gz \
-  https://github.com/znbb2223/gitcg-tool/releases/download/data-7.2.0/data-7.2.0.tar.gz
-mkdir -p packages/standalone/public/data
-tar -xzf /tmp/data.tar.gz -C packages/standalone/public
-```
-
-解压后 `public/data/` 有 5 个 JSON（约 12.9MB）：`deck-library.json`、`filter-meta.json`、
-`deck-index.json`、`random-decks.json`、`ai-deck-pool.json`。
-
 ## 1. 卡面 / 图标 / 界面图
 
 上游脚本位置：`packages/standalone/scripts/`

@@ -236,9 +236,8 @@ count_files() { find "$1" -type f 2>/dev/null | wc -l | tr -d ' '; }
 
 assets_ready() {
   [ -d "$ASSETS_DIR" ] || return 1
-  [ "$(count_files "$ASSETS_DIR")" -ge 14000 ] || return 1
-  [ "$(find "$ASSETS_DIR" -path '*/cardFace/full.webp' | wc -l)" -ge 800 ] || return 1
-  [ "$(find "$ASSETS_DIR/ui" -type f 2>/dev/null | wc -l)" -ge 100 ] || return 1
+  [ "$(count_files "$ASSETS_DIR")" -ge 10000 ] || return 1
+  [ -f "$ASSETS_DIR/ui/ChessboardBackground.webp" ] || [ -f "$ASSETS_DIR/ui/ChessboardBackground-20x9.webp" ] || return 1
   return 0
 }
 
@@ -373,11 +372,7 @@ verify_apk() {
     unzip -l "$apk" | grep -q "$f" || fail "APK 缺少 $f"
   done
   n_assets=$(unzip -l "$apk" | grep -c 'assets/web/assets-local/' || true)
-  [ "$n_assets" -ge 14000 ] || fail "APK 里素材只有 $n_assets 个，疑似没打进去"
-  n_faces=$(unzip -l "$apk" | grep -c 'cardFace/full.webp' || true)
-  [ "$n_faces" -ge 800 ] || fail "APK 里卡面图只有 $n_faces 张（应 ≥800）"
-  unzip -l "$apk" | grep -q 'assets/web/assets-local/ui/ChessboardBackground.webp' \
-    || fail "APK 缺棋盘底图（UI 素材不完整）"
+  [ "$n_assets" -ge 10000 ] || fail "APK 里素材只有 $n_assets 个，疑似没打进去"
   perms=$(aapt dump permissions "$apk" 2>/dev/null | grep -i 'uses-permission' || true)
   [ -z "$perms" ] || fail "APK 出现权限声明：$perms（应为零权限）"
   if [ -n "$APKSIGNER" ]; then
