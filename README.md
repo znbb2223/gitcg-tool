@@ -163,18 +163,7 @@
 > ⚠️ 仓库**不含**卡面素材与牌组库（版权 + 体积），不先抓会构建出一个“空壳页面”。
 > 抓取命令见 [docs/ASSETS.zh.md](./docs/ASSETS.zh.md)，落地目录见 [docs/BUILD.zh.md](./docs/BUILD.zh.md) 第 2 节。
 
-### 只给一个脚本（外部使用者）
-
-把 `build-gitcg-apk.sh` 单独发给对方，什么都不用准备：
-
-```bash
-sh build-gitcg-apk.sh
-```
-
-脚本会自己装工具链、拉最新源码、下牌组库数据包、抓素材、构建并输出 APK（默认到
-`/sdcard/Download/DSH-Go/`）。详见 [BUILD.zh.md](./docs/BUILD.zh.md) 0.4 节。
-
-### 仓库内一键构建（开发者）
+### 一键构建（开发者）
 
 ```bash
 # 全流程：抓素材 → 装依赖 → 构建 → 打 APK → 校验（手机上先看脚本体检输出）
