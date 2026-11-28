@@ -31,6 +31,7 @@
 
 | 文档 | 内容 |
 |---|---|
+| [DOC-STANDARD.md](./DOC-STANDARD.md) | **文档规范与自检**：必备结构、事实核对、`scripts/check-docs.py` |
 | [ARCHITECTURE.zh.md](./ARCHITECTURE.zh.md) | 包结构、对局数据流、布局三态、安卓壳、AI 结构 |
 | [BUILD.zh.md](./BUILD.zh.md) | 构建顺序、产物整理、APK 打包、版本号、失败对照 |
 | [MAINTENANCE.zh.md](./MAINTENANCE.zh.md) | **7.2.0 → 7.3.0 数据合并**、上游没更新时怎么自己补、已知 BUG、牌组码工具 |
@@ -59,7 +60,7 @@
 
 ## 相关文档
 
-- [SETTINGS.zh.md](SETTINGS.zh.md) · [DECK-IMAGE.zh.md](DECK-IMAGE.zh.md) · [AI-EXPERIMENTS.zh.md](AI-EXPERIMENTS.zh.md) · [AI-ROADMAP.zh.md](AI-ROADMAP.zh.md) · [AI-实现详解.zh.md](AI-实现详解.zh.md) · [AI.zh.md](AI.zh.md)
+- [DOC-STANDARD.md](DOC-STANDARD.md) · [SETTINGS.zh.md](SETTINGS.zh.md) · [DECK-IMAGE.zh.md](DECK-IMAGE.zh.md) · [AI-EXPERIMENTS.zh.md](AI-EXPERIMENTS.zh.md) · [AI-ROADMAP.zh.md](AI-ROADMAP.zh.md) · [AI-实现详解.zh.md](AI-实现详解.zh.md) · [AI.zh.md](AI.zh.md)
 - [AI实验交接-2026-11-27.md](AI实验交接-2026-11-27.md) · [ARCHITECTURE.zh.md](ARCHITECTURE.zh.md) · [ASSETS.zh.md](ASSETS.zh.md) · [BUILD.zh.md](BUILD.zh.md)
 - [DATA.zh.md](DATA.zh.md) · [DEVLOG.zh.md](DEVLOG.zh.md) · [GLOSSARY.zh.md](GLOSSARY.zh.md) · [INSTALL.zh.md](INSTALL.zh.md)
 - [KNOWN-ISSUES.zh.md](KNOWN-ISSUES.zh.md) · [PITFALLS.zh.md](PITFALLS.zh.md) · [ROADMAP.zh.md](ROADMAP.zh.md) · [TESTING.zh.md](TESTING.zh.md)

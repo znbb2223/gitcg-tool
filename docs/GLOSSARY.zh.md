@@ -30,12 +30,28 @@
 | 锚点布局 | 非 20:9 屏幕下的元素定位方案 |
 | 20:9 经典布局 | 0.11.121 的等比布局，20:9 屏幕固定使用 |
 
+## AI 与数据
+
+| 术语 | 含义 |
+|---|---|
+| 搜索式 AI | 默认 AI：每步做限定毫秒的推演（2500ms），不训练、不联网 |
+| 价值网 | 给「局面」打分的小型网络，训练自对弈样本；仍属实验线 |
+| 策略网 | 直接给「候选动作」排序的网络，与价值网配套 |
+| DMC | Deep Monte Carlo：用网络给每个动作打「这局会赢吗」的分，不做搜索（已封存） |
+| 镜像配对 | A/B 评测时让双方交换先后手各打一局，抵消先手优势 |
+| 隐藏信息 / fair | AI 是否能看到对手手牌等非公开信息；默认 fair（看不到） |
+| 44 维特征 | 搜索/评估用的局面特征向量，含元素、骰子、血量、牌数等 |
+| 经验种子 | 编译进包里的初始经验（69,515 局社区战绩） |
+| 高画质牌组图 | 设置项：关=JPG 约 0.85MB，开=PNG 约 10.5MB（见 [DECK-IMAGE.zh.md](./DECK-IMAGE.zh.md)） |
+| 33 槽 / shareId | 牌组码固定 3 角色 + 30 行动牌；每槽 12 bit 的 shareId，不是角色 id |
+| 非常规牌组 | 重复角色/同名 30 张等，正规对局不允许，只能模拟器与牌组码工具用 |
+
 
 ---
 
 ## 相关文档
 
-- [AI-EXPERIMENTS.zh.md](AI-EXPERIMENTS.zh.md) · [AI-ROADMAP.zh.md](AI-ROADMAP.zh.md) · [AI-实现详解.zh.md](AI-实现详解.zh.md) · [AI.zh.md](AI.zh.md)
+- [AI.zh.md](AI.zh.md) · [AI-实现详解.zh.md](AI-实现详解.zh.md) · [SETTINGS.zh.md](SETTINGS.zh.md) · [DECK-IMAGE.zh.md](DECK-IMAGE.zh.md)
 - [AI实验交接-2026-11-27.md](AI实验交接-2026-11-27.md) · [ARCHITECTURE.zh.md](ARCHITECTURE.zh.md) · [ASSETS.zh.md](ASSETS.zh.md) · [BUILD.zh.md](BUILD.zh.md)
 - [DATA.zh.md](DATA.zh.md) · [DEVLOG.zh.md](DEVLOG.zh.md) · [INSTALL.zh.md](INSTALL.zh.md) · [KNOWN-ISSUES.zh.md](KNOWN-ISSUES.zh.md)
 - [PITFALLS.zh.md](PITFALLS.zh.md) · [README.md](README.md) · [ROADMAP.zh.md](ROADMAP.zh.md) · [TESTING.zh.md](TESTING.zh.md)

@@ -15,12 +15,19 @@
 
 | key | 内容 |
 |---|---|
-| `gitcg.mainOrientation` | 主体横竖屏偏好 |
-| `gitcg.layoutMode` | 对局界面布局模式 |
-| `gitcg.deckLibrary.*` | 牌组库缓存、收藏、本地训练样本 |
-| `gitcg.deckbuilder.legalCheck` | 组牌器合法性检查开关 |
-| `gitcg.lab.*` | 实验室参数与结果 |
-| `gi-tcg-ai-experience` | 从训练器导入的 AI 经验 |
+| `gitcg.mainOrientation` | 主体横竖屏（`portrait` / `landscape`） |
+| `gitcg.gameLayout` | 对局界面布局（`classic` / `stretch` / `anchor`） |
+| `gitcg.shareQuality` | 牌组图画质（`compact` / `lossless`） |
+| `gi-tcg-user-decks-v1` | 组牌器 / 实验室自建牌组 |
+| `gi-tcg-deckbuilder-legal-check-v1` | 组牌器合法性检查开关 |
+| `gi-tcg-ai-learning-v1` | AI 经验（胜率 / 偏好 / 局数） |
+| `gi-tcg-ai-memory-v1` | AI 决策记忆 |
+| `gi-tcg-ai-game-log-v1` | 对局日志 |
+| `gi-tcg-ai-settings-v2:sim/lab/train` | 三处 AI 设置 |
+| `gi-tcg-lab-state-v1` | 实验室参数与结果 |
+| `gitcg.ai.flags` | AI 组件开关 |
+
+完整清单与逐项说明见 [docs/SETTINGS.zh.md](docs/SETTINGS.zh.md) 与 [docs/DATA.zh.md](docs/DATA.zh.md)。
 
 清除方式：系统设置 → 应用 → 七圣召唤工具 → 存储 → 清除数据。
 （会一并清掉设置、收藏与导入的经验。）

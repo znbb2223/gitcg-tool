@@ -306,7 +306,7 @@ pnpm --filter @gi-tcg/core test
 ## 五、牌组码工具（重点）
 
 README 首页那张“整活牌组图”（3 个相同角色 + 30 张相同卡）不是正常牌组，
-是用 [`tools/deckcode/`](../tools/deckcode/README.md) 生成的非常规牌组码。
+是用 `tools/deckcode/` 生成的非常规牌组码。
 
 | 文件 | 平台 | 特点 |
 |---|---|---|
@@ -348,6 +348,5 @@ cd tools/deckcode
 
 ## 相关文档
 
-- [BUILD.zh.md](BUILD.zh.md) · [DATA.zh.md](DATA.zh.md) · [ARCHITECTURE.zh.md](ARCHITECTURE.zh.md) · [TESTING.zh.md](TESTING.zh.md)
-- [KNOWN-ISSUES.zh.md](KNOWN-ISSUES.zh.md) · [AI.zh.md](AI.zh.md) · [文档中心](README.md) · [项目首页](../README.md)
-- [MAINTENANCE.zh.md](../docs/MAINTENANCE.zh.md) · [牌组码工具](../tools/deckcode/README.md) · [文档中心](../docs/README.md)
+- [MAINTENANCE.md](MAINTENANCE.md) · [KNOWN-ISSUES.md](KNOWN-ISSUES.md) · [build.md](build.md) · [decklib-update.md](decklib-update.md)
+- 仓库完整文档（含 UI / 设置 / 牌组图等）：https://github.com/znbb2223/gitcg-tool/tree/main/docs

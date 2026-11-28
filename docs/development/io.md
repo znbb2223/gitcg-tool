@@ -1,6 +1,6 @@
 # 玩家 IO
 
-IO 格式定义于包 `@gi-tcg/typings`。所有的 IO 均为 Protocol Buffer 导出的 JS 类型，详细格式参见 [`.proto` 源码](/packages/typings/src/proto/)。
+IO 格式定义于包 `@gi-tcg/typings`。所有的 IO 均为 Protocol Buffer 导出的 JS 类型，详细格式参见 [`.proto` 源码](../../proto/)。
 
 ## `rpc` 请求玩家行动
 

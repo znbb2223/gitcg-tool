@@ -10,7 +10,7 @@
 
 六个入口，一屏点完。顶部是版本号，右上角齿轮进设置。
 
-- **设置**：主体横竖屏、对局布局、AI 数据导入；
+- **设置**：5 项——AI 数据备份、牌组库备份、对局界面布局、主体方向、牌组图高画质，逐项见第 9 节或 [SETTINGS.zh.md](./SETTINGS.zh.md)；
 - 工具页可以竖屏看，进对局会自动转横屏。
 
 ## 2. 打一局
@@ -73,9 +73,7 @@
 
 ## 6. 摆盘器
 
-![摆盘器（竖屏）](./screenshots/05-state-editor.png)
-
-![摆盘器（横屏）](./screenshots/05-state-editor.png)
+![摆盘器](./screenshots/05-state-editor.png)
 
 1. 拖拽摆放双方手牌、牌库、骰子、角色位置；
 2. 摆好点「完成摆盘 → 开局」；
@@ -95,6 +93,27 @@
 
 版本号、更新日志、支持范围、许可说明都在这里。
 
+## 9. 设置与备份
+
+首页右上角 **⚙** 打开，全部 5 项（详细说明与存储键见 [SETTINGS.zh.md](./SETTINGS.zh.md)）：
+
+| 设置项 | 什么时候用 |
+|---|---|
+| AI 数据备份 / 导入 | 换机、重装、清缓存前；导出对局日志 + 决策记忆 + AI 参数 |
+| 牌组库备份 / 导入 | 备份组牌器/实验室攒下的自建牌组，按指纹合并不重复 |
+| 对局界面布局 | 非 20:9 屏幕画面变形/被裁时切换；下一局生效 |
+| 主体方向 | 工具页竖屏/横屏，选完即生效；对局永远横屏 |
+| 牌组图高画质渲染 | 要放大看细节才开（PNG 约 10.5MB），日常发群保持关闭（JPG 约 0.85MB） |
+
+**导出到哪**（安卓壳）：
+
+- AI 数据：`下载/七圣召唤工具/AI数据备份/gitcg-ai-backup-<时间>.json`
+- 牌组库：`下载/七圣召唤工具/牌组库备份/deck-library-<日期>.json`
+- 牌组图：`下载/七圣召唤工具/牌组图/`
+
+**注意**：清应用数据会连设置、AI 记忆、自建牌组一起清掉，换机前先在设置里导出。
+牌组图的尺寸/体积/改法见 [DECK-IMAGE.zh.md](./DECK-IMAGE.zh.md)。
+
 ---
 
 ## 遇到问题
@@ -111,5 +130,5 @@
 - [AI实验交接-2026-11-27.md](AI实验交接-2026-11-27.md) · [ARCHITECTURE.zh.md](ARCHITECTURE.zh.md) · [ASSETS.zh.md](ASSETS.zh.md) · [BUILD.zh.md](BUILD.zh.md)
 - [DATA.zh.md](DATA.zh.md) · [DEVLOG.zh.md](DEVLOG.zh.md) · [GLOSSARY.zh.md](GLOSSARY.zh.md) · [INSTALL.zh.md](INSTALL.zh.md)
 - [KNOWN-ISSUES.zh.md](KNOWN-ISSUES.zh.md) · [PITFALLS.zh.md](PITFALLS.zh.md) · [README.md](README.md) · [ROADMAP.zh.md](ROADMAP.zh.md)
-- [TESTING.zh.md](TESTING.zh.md) · [TRAINER.zh.md](TRAINER.zh.md) · [UI.zh.md](UI.zh.md) · [README.md](../README.md)
+- [TESTING.zh.md](TESTING.zh.md) · [TRAINER.zh.md](TRAINER.zh.md) · [UI.zh.md](UI.zh.md) · [SETTINGS.zh.md](SETTINGS.zh.md) · [DECK-IMAGE.zh.md](DECK-IMAGE.zh.md)
 - [MAINTENANCE.zh.md](../docs/MAINTENANCE.zh.md) · [牌组码工具](../tools/deckcode/README.md) · [文档中心](../docs/README.md)

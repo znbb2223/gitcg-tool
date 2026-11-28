@@ -73,11 +73,17 @@
 | key | 内容 |
 |---|---|
 | `gitcg.mainOrientation` | 主体横竖屏设置 |
-| `gitcg.layoutMode` | 布局模式 |
-| `gitcg.deckLibrary.*` | 牌组库缓存、收藏、本地训练样本 |
-| `gitcg.deckbuilder.legalCheck` | 组牌器合法性检查开关 |
-| `gitcg.lab.*` | 实验室参数与结果 |
-| `gitcg-ai-experience` | 训练器导入的 AI 经验 |
+| `gitcg.gameLayout` | 对局布局（`classic` / `stretch` / `anchor`） |
+| `gitcg.shareQuality` | 牌组图画质（`compact` / `lossless`） |
+| `gi-tcg-user-decks-v1` | 用户牌组（组牌器 / 实验室） |
+| `gi-tcg-deckbuilder-legal-check-v1` | 组牌器合法性检查开关 |
+| `gi-tcg-ai-learning-v1` | 合并后的 AI 经验 |
+| `gi-tcg-ai-memory-v1` | 决策记忆 |
+| `gi-tcg-ai-game-log-v1` | 对局日志 |
+| `gi-tcg-lab-state-v1` | 实验室参数与结果 |
+| `gitcg.ai.flags` | AI 组件开关 |
+
+完整键表、默认值与生效时机见 [SETTINGS.zh.md](./SETTINGS.zh.md)。
 
 ## 5. 构建产物
 

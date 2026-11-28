@@ -59,7 +59,8 @@
 
 ### 运行时
 
-`gi-tcg-ai-experience`（localStorage）：合并后的经验，结构同下。
+`gi-tcg-ai-learning-v1`（localStorage）：合并后的经验，结构同下。
+（旧版本用过 `gi-tcg-ai-experience`，读取时会做兼容迁移。）
 
 ### 训练器导出包
 
@@ -82,12 +83,20 @@
 
 | key | 说明 |
 |---|---|
-| `gitcg.mainOrientation` | `"portrait"` / `"landscape"` / `"auto"` |
-| `gitcg.layoutMode` | `"classic"` / `"stretch"` / `"anchor"` |
-| `gitcg.deckLibrary.favorites` | 收藏的牌组 id 列表 |
-| `gitcg.deckLibrary.local` | 本地训练样本 |
-| `gitcg.lab.settings` | 实验室参数（对局数、线程、预算） |
-| `gitcg-editor-resume` | 从对局返回摆盘器时用（sessionStorage） |
+| `gitcg.mainOrientation` | `"portrait"` / `"landscape"`（默认竖屏） |
+| `gitcg.gameLayout` | `"classic"` / `"stretch"` / `"anchor"`（默认锚点） |
+| `gitcg.shareQuality` | `"compact"` / `"lossless"`（牌组图画质） |
+| `gi-tcg-user-decks-v1` | 用户牌组（组牌器 / 实验室自建，JSON 数组） |
+| `gi-tcg-deckbuilder-legal-check-v1` | 组牌器合法性检查开关 |
+| `gi-tcg-deck-train-v1` | 组牌器本地训练样本 |
+| `gi-tcg-lab-state-v1` | 实验室参数（对局数、线程、预算）与结果 |
+| `gi-tcg-editor-resume` / `gi-tcg-editor-draft-v1` | 摆盘器草稿与续接（含 sessionStorage） |
+| `gi-tcg-start-snapshot` / `gi-tcg-board-snapshot` | 开局快照与局面快照 |
+| `gi-tcg-counter-overrides-v1` | 克制关系人工覆盖 |
+| `gi-tcg-ai-learning-v1` / `gi-tcg-ai-memory-v1` / `gi-tcg-ai-game-log-v1` | AI 经验 / 决策记忆 / 对局日志 |
+| `gitcg.ai.flags` | AI 组件开关（DMC、策略网等） |
+
+换机、清缓存前先导出：设置面板 →「AI 数据备份 / 牌组库备份」，见 [SETTINGS.zh.md](./SETTINGS.zh.md)。
 
 ## 5. 卡牌数据
 

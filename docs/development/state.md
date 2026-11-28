@@ -1,6 +1,6 @@
 # 对局状态、实体、技能
 
-本项目很重要的一点设计是——对局状态是**不可变数据结构**。任何对对局状态的修改，都会产生一个新的不可变数据结构，而非在原有数据结构上做修改。这对事件引发的技能使用提供了很大便利。`@gi-tcg/core` 的 [`src/base/state.ts`](/packages/core/src/base/state.ts) 给出了这些数据结构定义，你可以看到大量的 `readonly`。
+本项目很重要的一点设计是——对局状态是**不可变数据结构**。任何对对局状态的修改，都会产生一个新的不可变数据结构，而非在原有数据结构上做修改。这对事件引发的技能使用提供了很大便利。`@gi-tcg/core` 的 [`src/base/state.ts`](../../packages/core/src/base/state.ts) 给出了这些数据结构定义，你可以看到大量的 `readonly`。
 
 对局状态需要通过一些事先规定好的 mutations 修改。`applyMutation(oldState, mutation)` 会返回新的对局状态。Mutations 有很多种，囊括了所有可能的修改对局状态的方法；比如 `modifyEntityVar` 类型的 mutation 可以修改一个给定的实体的变量。
 

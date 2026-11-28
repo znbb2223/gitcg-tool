@@ -128,21 +128,35 @@
 
 ## 五、目录结构
 
+**仓库根目录**
+
 | 目录 | 作用 |
 |---|---|
-| `packages/` | pnpm monorepo |
+| `packages/` | pnpm monorepo（下面单独列） |
+| `android/` | 安卓 WebView 壳（MainActivity、资源拦截、设置页、`build.sh`） |
+| `trainer/` | 电脑端 AI 训练器（Node 多线程自对弈 + 经验导出） |
+| `tools/deckcode/` | 牌组码工具（sh / bat / Windows / HTML 四版） |
+| `promo/` | 宣传片工程（Motion Canvas） |
+| `docs/` | 文档中心，入口是 [docs/README.md](./docs/README.md) |
+| `artifacts/` | AI 实验归档、总总结、数据快照 |
+| `deploy/` | 部署脚本（服务器侧，非手机运行必需） |
+| `patches/` `/proto/` `/scripts/` | 补丁、protobuf 定义、辅助脚本 |
+
+**`packages/` 下**
+
+| 包 | 作用 |
+|---|---|
 | `core/` | 对局引擎（规则、状态机、reducer） |
-| `ai/` | AI：搜索、进化、经验库、牌组池 |
+| `ai/` | AI：搜索、经验库、牌组池 |
 | `data/` | 卡牌与角色数据 |
 | `web-ui-core/` | 对局界面组件（棋盘、手牌、骰子、技能面板） |
 | `deck-builder/` | 组牌器组件 |
 | `state-editor/` | 摆盘器组件 |
 | `standalone/` | 独立 Web 应用入口（hub / 模拟器 / 实验室 / 牌组库） |
-| `android/` | 安卓 WebView 壳（MainActivity、资源拦截、设置页、build.sh） |
-| `trainer/` | 电脑端 AI 训练器 |
-| `promo/` | 宣传片工程（Motion Canvas） |
-| `docs/` | 文档 |
-
+| `assets-manager/` | 素材路径与清单 |
+| `card-data-viewer/`、`detail-log-viewer/` | 卡牌/日志查看器（开发辅助） |
+| `server/`、`web-client/`、`web-ui/` | 上游对战平台相关 |
+| `typings/`、`utils/`、`config/`、`test/` | 类型、工具、配置、测试 |
 
 ## 六、快速开始
 
@@ -198,6 +212,7 @@ cd android && ./build.sh
 | [docs/PITFALLS.zh.md](./docs/PITFALLS.zh.md) | 踩坑清单：现象 / 根因 / 解法 |
 | [docs/TRAINER.zh.md](./docs/TRAINER.zh.md) | 训练器设计、参数、经验导出与回灌 |
 | [docs/ASSETS.zh.md](./docs/ASSETS.zh.md) | 卡面 / 数据 / 牌组库抓取说明 |
+| [docs/DOC-STANDARD.md](./docs/DOC-STANDARD.md) | **文档规范**：必备结构、事实核对、自检脚本 |
 | [docs/SETTINGS.zh.md](./docs/SETTINGS.zh.md) | **设置面板**：5 个设置项、默认值、存储键、与生图/布局/备份的关系 |
 | [docs/DECK-IMAGE.zh.md](./docs/DECK-IMAGE.zh.md) | **牌组图**：入口、输出规格（尺寸/体积）、实现位置与改法 |
 | [docs/DATA.zh.md](./docs/DATA.zh.md) | 牌组码编码、牌组库条目、AI 经验包、缓存键 |
