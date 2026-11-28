@@ -93,16 +93,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ASSETS=packages/standalone/public/assets-local
+          ASSETS="$PWD/packages/standalone/public/assets-local"
           mkdir -p "$ASSETS"
           n=$(find "$ASSETS" -type f | wc -l)
           if [ "$n" -lt 10000 ]; then
-            cd packages/standalone
-            node scripts/download-assets.mjs
-            node scripts/download-datum.mjs
-            timeout 900 node scripts/download-full.mjs || echo "全尺寸图抓取超时/失败，继续"
+            (
+              cd packages/standalone
+              node scripts/download-assets.mjs
+              node scripts/download-datum.mjs
+              timeout 1200 node scripts/download-full.mjs || echo "全尺寸图抓取超时/失败，继续"
+            )
           fi
-          find "$ASSETS" -type f | wc -l
+          n=$(find "$ASSETS" -type f | wc -l)
+          echo "素材文件数：$n"
+          [ "$n" -ge 10000 ] || { echo "素材不足 10000 个"; exit 1; }
 
       - name: 构建 Web + 打包 APK
         shell: bash
