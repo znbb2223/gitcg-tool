@@ -47,7 +47,8 @@ UI 规范只有 82 行，读者要翻半天还不确定是否最新。**宁可�
 | 牌组图版式 / 体积 | [DECK-IMAGE.zh.md](./DECK-IMAGE.zh.md) |
 | 对局布局 / 方向 | [UI.zh.md](./UI.zh.md) |
 | 构建顺序 / 依赖版本 | [BUILD.zh.md](./BUILD.zh.md)、[AGENTS.md](../AGENTS.md) |
-| 已知 BUG 修复/新增 | [KNOWN-ISSUES.zh.md](./KNOWN-ISSUES.zh.md) |
+| 已知 BUG 修复/新增 | [KNOWN-ISSUES.zh.md](./KNOWN-ISSUES.zh.md)，并跑 `scripts/sync-dev-docs.py` |
+| 关键数字/版本 | [FACTS.md](./FACTS.md)（值 + 出处 + 校验方式） |
 | 版本号 / 数据版本 | README、[CHANGELOG.md](../CHANGELOG.md)、[MAINTENANCE.zh.md](./MAINTENANCE.zh.md) |
 
 ## 5. 自检命令
@@ -55,6 +56,9 @@ UI 规范只有 82 行，读者要翻半天还不确定是否最新。**宁可�
 ```bash
 # 围栏配对 + 相对链接是否指向真实文件（退出码 0 才算过）
 python3 scripts/check-docs.py
+
+# APK 内置副本是否与 docs/ 源文档同步（不同步就失败）
+python3 scripts/sync-dev-docs.py --check
 
 # 顺手核对：文档里提到的键名是否还在代码里
 grep -o 'gitcg\.[a-zA-Z.]*' docs/*.md | sort -u
@@ -67,6 +71,7 @@ grep -c '^```' docs/*.md
 ## 6. 提交前清单
 
 - [ ] `python3 scripts/check-docs.py` 通过
+- [ ] 改了 KNOWN-ISSUES / MAINTENANCE 的，`python3 scripts/sync-dev-docs.py` 跑过并通过 `--check`
 - [ ] 新增/改动的路径、命令、键名都实际验证过
 - [ ] 文末“相关文档”已互链（新文档要在 `docs/README.md` 与根 `README.md` 的文档表里出现）
 - [ ] 涉及设置的，同步了 [SETTINGS.zh.md](./SETTINGS.zh.md)
@@ -74,6 +79,12 @@ grep -c '^```' docs/*.md
 - [ ] 归档类文档标了日期与“历史记录”字样
 
 ## 7. 文档分级
+
+### 内置副本（android/dev-docs/）
+
+`KNOWN-ISSUES.md`、`MAINTENANCE.md` 是 APK 里给人看的副本，**不要手改**：
+改 `docs/` 同名源文档后跑 `python3 scripts/sync-dev-docs.py`，脚本会把相对链接改成 GitHub 地址。
+`--check` 不一致时退出码 1，提交前跑一次。
 
 | 级别 | 例子 | 要求 |
 |---|---|---|

@@ -208,11 +208,11 @@ pnpm --filter @gi-tcg/standalone build
 # 2) 组装完整 Web 目录（dist 本身只有 27MB，不含卡图）
 rm -rf /tmp/web-full
 cp -a packages/standalone/dist /tmp/web-full
-# 卡图/资源：约 202MB
+# 卡图/资源：解包约 149MB（按 4K 块算约 186MB，小文件多）
 cp -a /path/to/dist-lab/assets-local /tmp/web-full/
 # 牌组库数据：约 13MB，缺了会“牌组库数据读取失败”
 cp -a /path/to/dist-lab/data /tmp/web-full/
-# 3) 确认体积，完整应约 240MB
+# 3) 确认体积，完整 assets/web 解包约 189MB
 du -sh /tmp/web-full
 ```
 
@@ -262,8 +262,8 @@ unzip -p app.apk assets/web/about.html | grep -c "免责声明"
 |---|---|
 | APK（含卡图、牌组库） | 约 150MB |
 | 只有 Web 产物（错误） | 约 6MB |
-| 卡图 `assets-local` | 约 202MB |
-| 牌组库 `data` | 约 13MB |
+| 卡图 `assets-local` | 约 **149MB**（解包字节；按文件系统块算约 186MB） |
+| 牌组库 `data` | 约 13MB（12.9MB 实测） |
 
 ### 10.7 文件清单对拍
 

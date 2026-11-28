@@ -1,5 +1,5 @@
-> 本文同步自公开仓库 `docs/`；文档里的相对链接以公开仓库为准。
-> 仓库：https://github.com/znbb2223/gitcg-tool
+> ⚠️ 本文件由 `scripts/sync-dev-docs.py` 从 `docs/MAINTENANCE.zh.md` 自动生成，请改源文档。
+> 校验：`python3 scripts/sync-dev-docs.py --check`
 
 # 维护与数据更新（7.2.0 → 7.3.0）
 
@@ -299,14 +299,22 @@ pnpm --filter @gi-tcg/core test
 - 规避：先把牌加入牌组，再点屏幕下方「当前牌组」里的同一张牌，即可看详情；
 - 修复方向：检查竖屏布局下按钮的点击区域是否被卡面容器覆盖。
 
-> 这两条是**已知问题**，不是“待办承诺”；短期不更新期间不会修。
+### BUG 3：组牌器 / 牌组库 / 关于 的返回按钮跳到对局配置
+
+- 位置：三个页面顶部的“返回/返回首页”；
+- 现象：点击后进入对局配置页，而不是工具首页；再按系统返回才会回到工具首页
+  （中间会先回当前功能页）；
+- 规避：直接用系统返回，或到对局配置后再按一次返回；
+- 修复方向：统一“返回首页”的跳转目标为 `hub.html`，不要用 `index.html`。
+
+> 这几条是**已知问题**，不是“待办承诺”；短期不更新期间不会修。
 
 ---
 
 ## 五、牌组码工具（重点）
 
 README 首页那张“整活牌组图”（3 个相同角色 + 30 张相同卡）不是正常牌组，
-是用 `tools/deckcode/` 生成的非常规牌组码。
+是用 [`tools/deckcode/`](https://github.com/znbb2223/gitcg-tool/blob/main/docs/tools/deckcode/README.md) 生成的非常规牌组码。
 
 | 文件 | 平台 | 特点 |
 |---|---|---|
@@ -348,5 +356,6 @@ cd tools/deckcode
 
 ## 相关文档
 
-- [MAINTENANCE.md](MAINTENANCE.md) · [KNOWN-ISSUES.md](KNOWN-ISSUES.md) · [build.md](build.md) · [decklib-update.md](decklib-update.md)
-- 仓库完整文档（含 UI / 设置 / 牌组图等）：https://github.com/znbb2223/gitcg-tool/tree/main/docs
+- [BUILD.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/BUILD.zh.md) · [DATA.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/DATA.zh.md) · [ARCHITECTURE.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/ARCHITECTURE.zh.md) · [TESTING.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/TESTING.zh.md)
+- [KNOWN-ISSUES.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/KNOWN-ISSUES.zh.md) · [AI.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/AI.zh.md) · [文档中心](https://github.com/znbb2223/gitcg-tool/blob/main/docs/README.md) · [项目首页](https://github.com/znbb2223/gitcg-tool/blob/main/docs/README.md)
+- [MAINTENANCE.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/MAINTENANCE.zh.md) · [牌组码工具](https://github.com/znbb2223/gitcg-tool/blob/main/docs/tools/deckcode/README.md) · [文档中心](https://github.com/znbb2223/gitcg-tool/blob/main/docs/README.md)

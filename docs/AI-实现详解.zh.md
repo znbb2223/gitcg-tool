@@ -302,19 +302,19 @@ function encodeCandidate(c, withScore) {
     ...ACTION_KINDS.map((kind) => (c.k === kind ? 1 : 0)),
     // 6 维数值：费用、伤害、击杀、快攻、目标血、结束
     c.cost, c.dmg, c.kill, c.fast, c.tgtHp, c.end,
-    // 可选：把启发式分也喂进去（模型输入变 14 维）
+    // 可选：把启发式分也喂进去（模型输入变 13 维）
     ...(withScore ? [c.sc] : []),
   ];
 }
 ```
 
-所以策略网输入 = **44 维局面 + 13 维动作**（`usesScore` 时 14 维）。
+所以策略网输入 = **44 维局面 + 12 维动作**（`usesScore` 时 13 维）。
 这个编码必须与 `tools/train_policy.py#encode_action` **逐位一致**，否则训出来的权重对不上。
 
 ### 5.4 前向（与 DMC 共用同一个格式）
 
 ```ts
-// 给每个候选打分：44 维局面 + 13 维动作 → 前向
+// 给每个候选打分：44 维局面 + 12 维动作 → 前向
 export function policyScores(weights, stateVector, candidates) {
   return candidates.map((candidate) => {
     // 拼输入并按训练时的 mean/std 归一化
@@ -656,7 +656,7 @@ export function pickDmcAction(weights, actions, state, options) {
 ### 10.3 训练链
 
 - 采样：`scripts/dmc-selfplay.mjs`，自对弈，ε 从 0.25 降到 0.06；
-- 样本：`{"x":[44 维],"c":{13 维动作},"r":±1 整局回报}`，gzip 追加；
+- 样本：`{"x":[44 维],"c":{12 维动作},"r":±1 整局回报}`，gzip 追加；
 - 训练：`tools/train_dmc.py`，两遍扫描 + float32 预分配（千万样本省内存）；
 - 结果：R0 5k 局 → R3 35k 局，共 312 万样本；Q0~Q4 权重。
 

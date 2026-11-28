@@ -1,5 +1,5 @@
-> 本文同步自公开仓库 `docs/`；文档里的相对链接以公开仓库为准。
-> 仓库：https://github.com/znbb2223/gitcg-tool
+> ⚠️ 本文件由 `scripts/sync-dev-docs.py` 从 `docs/KNOWN-ISSUES.zh.md` 自动生成，请改源文档。
+> 校验：`python3 scripts/sync-dev-docs.py --check`
 
 # 已知问题与限制
 
@@ -20,6 +20,14 @@
 - 现象：点击无反应，不能**直接**打开这张牌的详情；
 - 影响：少一个快捷入口，但**不影响把牌选进牌组**；
 - 规避：**先把这张牌加入牌组**，再点屏幕下方「当前牌组」里的同一张牌，就能看到详情；
+- 状态：已知，短期不修。
+
+### 3. 组牌器 / 牌组库 / 关于 的“返回”会跳到对局配置
+- 位置：组牌器、牌组库、关于页顶部的“返回/返回首页”按钮；
+- 现象：点击后进入的是**对局配置**页，而不是工具首页；
+  此时按系统返回会回到当前功能页，再按一次才回到工具首页；
+- 影响：多走一步，容易以为按钮坏了；
+- 规避：点完后再按系统返回，或直接用系统返回退出；
 - 状态：已知，短期不修。
 
 ## 一、布局相关
@@ -104,5 +112,9 @@
 
 ## 相关文档
 
-- [KNOWN-ISSUES.md](KNOWN-ISSUES.md) · [MAINTENANCE.md](MAINTENANCE.md) · [README.md](README.md) · [build.md](build.md)
-- 仓库完整文档（含 UI / 设置 / 牌组图等）：https://github.com/znbb2223/gitcg-tool/tree/main/docs
+- [AI-EXPERIMENTS.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/AI-EXPERIMENTS.zh.md) · [AI-ROADMAP.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/AI-ROADMAP.zh.md) · [AI-实现详解.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/AI-实现详解.zh.md) · [AI.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/AI.zh.md)
+- [AI实验交接-2026-11-27.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/AI实验交接-2026-11-27.md) · [ARCHITECTURE.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/ARCHITECTURE.zh.md) · [ASSETS.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/ASSETS.zh.md) · [BUILD.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/BUILD.zh.md)
+- [DATA.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/DATA.zh.md) · [DEVLOG.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/DEVLOG.zh.md) · [GLOSSARY.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/GLOSSARY.zh.md) · [INSTALL.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/INSTALL.zh.md)
+- [PITFALLS.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/PITFALLS.zh.md) · [README.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/README.md) · [ROADMAP.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/ROADMAP.zh.md) · [TESTING.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/TESTING.zh.md)
+- [TRAINER.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/TRAINER.zh.md) · [UI.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/UI.zh.md) · [USER-GUIDE.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/USER-GUIDE.zh.md) · [README.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/README.md)
+- [MAINTENANCE.zh.md](https://github.com/znbb2223/gitcg-tool/blob/main/docs/MAINTENANCE.zh.md) · [牌组码工具](https://github.com/znbb2223/gitcg-tool/blob/main/docs/tools/deckcode/README.md) · [文档中心](https://github.com/znbb2223/gitcg-tool/blob/main/docs/README.md)

@@ -213,6 +213,7 @@ cd android && ./build.sh
 | [docs/TRAINER.zh.md](./docs/TRAINER.zh.md) | 训练器设计、参数、经验导出与回灌 |
 | [docs/ASSETS.zh.md](./docs/ASSETS.zh.md) | 卡面 / 数据 / 牌组库抓取说明 |
 | [docs/DOC-STANDARD.md](./docs/DOC-STANDARD.md) | **文档规范**：必备结构、事实核对、自检脚本 |
+| [docs/FACTS.md](./docs/FACTS.md) | **数字核对表**：4,557 套 / 70,102 局 / 149MB 等关键数字的出处与校验命令 |
 | [docs/SETTINGS.zh.md](./docs/SETTINGS.zh.md) | **设置面板**：5 个设置项、默认值、存储键、与生图/布局/备份的关系 |
 | [docs/DECK-IMAGE.zh.md](./docs/DECK-IMAGE.zh.md) | **牌组图**：入口、输出规格（尺寸/体积）、实现位置与改法 |
 | [docs/DATA.zh.md](./docs/DATA.zh.md) | 牌组码编码、牌组库条目、AI 经验包、缓存键 |

@@ -32,6 +32,7 @@
 | 文档 | 内容 |
 |---|---|
 | [DOC-STANDARD.md](./DOC-STANDARD.md) | **文档规范与自检**：必备结构、事实核对、`scripts/check-docs.py` |
+| [FACTS.md](./FACTS.md) | **关键数字核对表**：牌组数/体积/种子/战绩/代码常量 + 校验命令 |
 | [ARCHITECTURE.zh.md](./ARCHITECTURE.zh.md) | 包结构、对局数据流、布局三态、安卓壳、AI 结构 |
 | [BUILD.zh.md](./BUILD.zh.md) | 构建顺序、产物整理、APK 打包、版本号、失败对照 |
 | [MAINTENANCE.zh.md](./MAINTENANCE.zh.md) | **7.2.0 → 7.3.0 数据合并**、上游没更新时怎么自己补、已知 BUG、牌组码工具 |

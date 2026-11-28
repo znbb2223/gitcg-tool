@@ -732,7 +732,7 @@
           document.getElementById("expGames").textContent =
             `${learning.games ?? 0} 局 · 版本 ${learning.gameVersion ?? "7.2.0"}`;
         } else {
-          document.getElementById("expGames").textContent = "内置 69,515 局社区战绩种子（开局即有基础判断）";
+          document.getElementById("expGames").textContent = "内置 70,102 局社区战绩种子（开局即有基础判断）";
         }
       } catch {
         document.getElementById("expGames").textContent = "读取失败";
@@ -794,7 +794,7 @@
           note.textContent = ok
             ? games > 0
               ? `已导出：${games} 局记忆 + ${(bundle.games ?? []).length} 条对局日志 + ${settingCount} 份 AI 设置`
-              : "已导出（当前还没有本地记忆，首局之后会累积；内置 69,515 局种子随应用走，不用备份）"
+              : "已导出（当前还没有本地记忆，首局之后会累积；内置 70,102 局种子随应用走，不用备份）"
             : "导出失败，请检查存储权限";
         });
 
